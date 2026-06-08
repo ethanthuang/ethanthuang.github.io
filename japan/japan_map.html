@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Japan Trip · Map</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f7f6f3;display:flex;height:100vh;overflow:hidden}
+
+/* Sidebar */
+.sidebar{width:300px;flex-shrink:0;background:#fff;border-right:1px solid #e8e7e4;display:flex;flex-direction:column;overflow:hidden}
+.sidebar-header{background:#1a1a18;padding:16px 18px 14px}
+.sidebar-header h1{font-family:'Playfair Display',serif;font-size:20px;font-weight:400;color:#f7f6f3}
+.sidebar-header p{font-size:11px;color:rgba(247,246,243,0.55);margin-top:3px}
+.filter-row{padding:10px 12px;border-bottom:1px solid #f0eeea;display:flex;flex-wrap:wrap;gap:5px}
+.f-btn{font-size:11px;padding:3px 9px;border-radius:20px;border:1px solid #ddd;background:transparent;cursor:pointer;color:#666}
+.f-btn.active{background:#1a1a18;color:#fff;border-color:#1a1a18}
+.places-list{overflow-y:auto;flex:1}
+.city-group{border-bottom:1px solid #f0eeea}
+.city-label{font-size:10px;font-weight:600;letter-spacing:0.6px;text-transform:uppercase;padding:8px 14px 4px;color:#aaa}
+.place-item{display:flex;align-items:flex-start;gap:9px;padding:7px 14px;cursor:pointer;transition:background 0.1s}
+.place-item:hover{background:#faf9f7}
+.place-item.active{background:#f0eeea}
+.place-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.place-info{flex:1;min-width:0}
+.place-name{font-size:12px;color:#1a1a18;line-height:1.35;font-weight:500}
+.place-day{font-size:10px;color:#aaa;margin-top:1px}
+.place-cat{font-size:9px;padding:1px 5px;border-radius:8px;font-weight:500;margin-top:2px;display:inline-block}
+
+/* Map */
+#map{flex:1;z-index:0;margin-top:37px}
+
+/* Custom markers */
+.pin{width:28px;height:28px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2.5px solid rgba(255,255,255,0.9);box-shadow:0 2px 6px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center}
+.pin-inner{transform:rotate(45deg);font-size:11px;font-weight:700;color:#fff}
+
+/* Popup */
+.leaflet-popup-content-wrapper{border-radius:10px;border:none;box-shadow:0 4px 16px rgba(0,0,0,0.15);padding:0;overflow:hidden}
+.leaflet-popup-content{margin:0;min-width:200px}
+.popup-inner{padding:12px 14px}
+.popup-cat{font-size:9px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:#888;margin-bottom:3px}
+.popup-name{font-size:14px;font-weight:500;color:#1a1a18;margin-bottom:2px}
+.popup-day{font-size:11px;color:#888;margin-bottom:6px}
+.popup-maps{font-size:11px;color:#1a5580;text-decoration:none;display:inline-block;padding:4px 9px;background:#ddeeff;border-radius:5px}
+.popup-maps:hover{background:#ccd8f0}
+.leaflet-popup-tip-container{display:none}
+
+/* Category badge colors */
+.cat-eat{background:#fde8e0;color:#8a3018}
+.cat-drink{background:#ede8fb;color:#4a3899}
+.cat-do{background:#e8f5e8;color:#2d7a2d}
+.cat-shop{background:#fef3e0;color:#8a5010}
+.cat-stay{background:#ddeeff;color:#1a5580}
+.cat-bar{background:#fce8f0;color:#7a2545}
+.cat-travel{background:#ebebeb;color:#555}
+  .nav-bar { position: absolute; top: 0; left: 300px; right: 0; z-index: 1000; display: flex; gap: 8px; padding: 8px 12px; background: rgba(247,246,243,0.95); border-bottom: 1px solid #e8e7e4; backdrop-filter: blur(4px); }
+  .nav-link { font-size: 12px; padding: 4px 12px; border-radius: 20px; border: 1px solid #ddd; background: #fff; cursor: pointer; color: #555; text-decoration: none; }
+  .nav-link.active { background: #1a1a18; color: #fff; border-color: #1a1a18; }
+</style>
+</head>
+<body>
+
+<div class="nav-bar">
+  <a class="nav-link" href="index.html">📋 Schedule</a>
+  <a class="nav-link active" href="japan_map.html">🗺 Map</a>
+</div>
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h1>Japan Trip</h1>
+    <p>Jun 28 – Jul 12, 2026 · All locations</p>
+  </div>
+  <div class="filter-row" id="filters"></div>
+  <div class="places-list" id="placesList"></div>
+</div>
+<div id="map"></div>
+
+<script>
+const PLACES = [
+  // ── TOKYO ──
+  {city:'Tokyo', day:'Day 1', name:'Park Hyatt Tokyo', cat:'Stay', lat:35.6862,lng:139.6905, pid:'ChIJJ7La1yzzGGARln2OypSj2Cw'},
+  {city:'Tokyo', day:'Day 1', name:'Omoide Yokocho', cat:'Eat', lat:35.6927,lng:139.6996, pid:'ChIJP9eKBdeMGGAR0zzBXJNVj5A'},
+  {city:'Tokyo', day:'Day 2', name:'Sushi Kidoguchi', cat:'Eat', lat:35.6638,lng:139.7121, pid:'ChIJWdhcBWCLGGARxuyISzMZfGU'},
+  {city:'Tokyo', day:'Day 2', name:'Harajuku / Omotesando', cat:'Do', lat:35.6710,lng:139.7052, pid:'ChIJlVne8bqMGGARtX5O6ojMvsI'},
+  {city:'Tokyo', day:'Day 2', name:'Dolce Tacubo', cat:'Eat', lat:35.6499,lng:139.7055, pid:'ChIJvaN4mziLGGAR6t4CkHY0hCw'},
+  {city:'Tokyo', day:'Day 2', name:'Hikiniku to Come', cat:'Eat', lat:35.6593,lng:139.6976, pid:'ChIJsWJ80PiNGGAR8aSF8OFJeu4'},
+  {city:'Tokyo', day:'Day 3', name:'Onitsuka Tiger Ginza', cat:'Shop', lat:35.6709,lng:139.7619, pid:'ChIJLT73m3eLGGARdRlWxF-2SnU'},
+  {city:'Tokyo', day:'Day 3', name:'MUJI Ginza', cat:'Shop', lat:35.6732,lng:139.7654, pid:'ChIJfc-uOKqLGGAR-bVyIUWjtQo'},
+  {city:'Tokyo', day:'Day 12', name:'Shimokitazawa', cat:'Shop', lat:35.6612,lng:139.6683, pid:'ChIJ-RETm8nzGGARIpEurSKyAYI'},
+  {city:'Tokyo', day:'Day 12', name:'Golden Gai', cat:'Bar', lat:35.6941,lng:139.7048, pid:'ChIJr7mGZdmMGGARjxoMFeHApXE'},
+  {city:'Tokyo', day:'Day 13', name:'Tsukiji Outer Market', cat:'Eat', lat:35.6648,lng:139.7703, pid:'ChIJW2cLzSGLGGARXAKXv6EkbqI'},
+  {city:'Tokyo', day:'Day 13', name:'Ryogoku Kokugikan', cat:'Do', lat:35.6970,lng:139.7935, pid:'ChIJGeu4VDWJGGARdPoda8d8I3A'},
+  {city:'Tokyo', day:'Day 13', name:'Jambo Hanare', cat:'Eat', lat:35.7066,lng:139.7624, pid:'ChIJQZqLszyMGGAR_0fPsHLwL_Q'},
+  {city:'Tokyo', day:'Day 13', name:'Bar Benfiddich', cat:'Bar', lat:35.6895,lng:139.6966, pid:'ChIJZUTGW9GMGGAROJ7G4sU221Q'},
+
+  // ── HAKONE ──
+  {city:'Hakone', day:'Day 3', name:'Ten-Yu Hakone', cat:'Stay', lat:35.2387,lng:139.0442, pid:'ChIJhfCwMAaiGWARW2IZmApNjZU'},
+  {city:'Hakone', day:'Day 4', name:'Lake Ashi', cat:'Do', lat:35.2096,lng:139.0035, pid:'ChIJoT-oK-mYGWARy-ItUPA6ekk'},
+  {city:'Hakone', day:'Day 4', name:'Owakudani', cat:'Do', lat:35.2456,lng:139.0211, pid:'ChIJY2br3DCfGWARMDFegqz4huQ'},
+
+  // ── KYOTO ──
+  {city:'Kyoto', day:'Day 4', name:'Nol Kyoto Sanjo', cat:'Stay', lat:35.0091,lng:135.7633, pid:'ChIJv8RJ2o8IAWARvb9D_eZ-Abw'},
+  {city:'Kyoto', day:'Day 4', name:'Nishiki Market', cat:'Do', lat:35.0050,lng:135.7647, pid:'ChIJT8uMzZwIAWARnGzsARCjnrY'},
+  {city:'Kyoto', day:'Day 4', name:'Pontocho Alley', cat:'Eat', lat:35.0039,lng:135.7710, pid:'ChIJP2DblBgJAWARAgLlF0vWT6o'},
+  {city:'Kyoto', day:'Day 5', name:'Fushimi Inari Taisha', cat:'Do', lat:34.9677,lng:135.7792, pid:'ChIJIW0uPRUPAWAR6eI6dRzKGns'},
+  {city:'Kyoto', day:'Day 5', name:'Vermillion Cafe', cat:'Drink', lat:34.9684,lng:135.7742, pid:'ChIJ7V6ukxUPAWAR1z7SkqVGAA0'},
+  {city:'Kyoto', day:'Day 5', name:'Kiyomizu-dera', cat:'Do', lat:34.9947,lng:135.7847, pid:'ChIJB_vchdMIAWARujTEUIZlr2I'},
+  {city:'Kyoto', day:'Day 5', name:'Ippodo Tea', cat:'Shop', lat:35.0145,lng:135.7674, pid:'ChIJcadqE4wIAWAR2BeU0_UOXtE'},
+  {city:'Kyoto', day:'Day 6', name:'Kinkaku-ji', cat:'Do', lat:35.0394,lng:135.7292, pid:'ChIJvUbrwCCoAWARX2QiHCsn5A4'},
+  {city:'Kyoto', day:'Day 6', name:'Ryoanji Rock Garden', cat:'Do', lat:35.0344,lng:135.7182, pid:'ChIJ3asJPSqoAWARaecNxjPnh8s'},
+  {city:'Kyoto', day:'Day 6', name:'Gion Shirakawa Canal', cat:'Do', lat:35.0055,lng:135.7736, pid:'ChIJh8ezaNwJAWARmKlGTSmqPJc'},
+  {city:'Kyoto', day:'Day 6', name:'Kappo Hassun', cat:'Eat', lat:35.0049,lng:135.7738, pid:'ChIJdapH2MEIAWAR4M8GwwL-axs'},
+  {city:'Kyoto', day:'Day 7', name:'Kifune Shrine', cat:'Do', lat:35.1221,lng:135.7629, pid:'ChIJCZEK8wimAWARi1RkteQaAh0'},
+  {city:'Kyoto', day:'Day 7', name:'Hirobun (Kawadoko)', cat:'Eat', lat:35.1253,lng:135.7639, pid:'ChIJqcbJieKlAWARjbvKL96apfQ'},
+  {city:'Kyoto', day:'Day 8', name:'Arashiyama Bamboo Forest', cat:'Do', lat:35.0168,lng:135.6713, pid:'ChIJrYtcv-urAWAR3XzWvXv8n_s'},
+  {city:'Kyoto', day:'Day 8', name:'Tenryu-ji Garden', cat:'Do', lat:35.0157,lng:135.6734, pid:'ChIJBXGEbQGqAWARrcXmRDMJaLQ'},
+  {city:'Kyoto', day:'Day 8', name:'Hayakawa Hamonoten', cat:'Shop', lat:35.0018,lng:135.7633, pid:'ChIJ__9gpZcIAWARuam9PUv-zBw'},
+  {city:'Kyoto', day:'Day 8', name:'KUOE Watches', cat:'Shop', lat:35.0085,lng:135.7668, pid:'ChIJBc57aw4JAWARNRkUdgsACvY'},
+  {city:'Kyoto', day:'Day 8', name:'K36 Rooftop Bar', cat:'Bar', lat:34.9976,lng:135.7797, pid:'ChIJTb-8AWoJAWARRnZGKmnbqgc'},
+
+  // ── UJI ──
+  {city:'Uji', day:'Day 7', name:'Nakamura Tokichi', cat:'Eat', lat:34.8895,lng:135.8018, pid:'ChIJsY2yLgkRAWARRxd0gBbV7XI'},
+  {city:'Uji', day:'Day 7', name:'Byodo-in Temple', cat:'Do', lat:34.8893,lng:135.8077, pid:'ChIJqyva4AwRAWARpAf6j5MUhGA'},
+
+  // ── OSAKA ──
+  {city:'Osaka', day:'Day 9', name:'Kuromon Market', cat:'Do', lat:34.6654,lng:135.5062, pid:'ChIJXSJB5UHnAGARQcEjvngsHaw'},
+  {city:'Osaka', day:'Day 9', name:'Dotonbori', cat:'Do', lat:34.6686,lng:135.5031, pid:'ChIJg2DcJhXnAGARCbeAHoZrPeQ'},
+  {city:'Osaka', day:'Day 9', name:'Shinsaibashi', cat:'Shop', lat:34.6724,lng:135.5010, pid:'ChIJBZx64mjnAGARkG8ohBR7BqI'},
+  {city:'Osaka', day:'Day 9', name:'Osaka Kanigin Namba', cat:'Eat', lat:34.6668,lng:135.5020, pid:'ChIJz70hzbXnAGARDtfAnqJRUdI'},
+  {city:'Osaka', day:'Day 10', name:'Minoh Falls', cat:'Do', lat:34.8538,lng:135.4720, pid:'ChIJE8YKbYz5AGARoCiDnK6410w'},
+  {city:'Osaka', day:'Day 10', name:'Katsuo-ji Temple', cat:'Do', lat:34.8658,lng:135.4911, pid:'ChIJtX8053n5AGARND16wXHGXg0'},
+  {city:'Osaka', day:'Day 10', name:'Wagyu Idaten', cat:'Eat', lat:34.6678,lng:135.5011, pid:'ChIJF9AXoBznAGARi-T-JyJ_UEQ'},
+
+  // ── KOBE ──
+  {city:'Kobe', day:'Day 11', name:'Kitano Ijinkan', cat:'Do', lat:34.7007,lng:135.1908, pid:'ChIJT6cViuCOAGARegX_ORkvbs0'},
+  {city:'Kobe', day:'Day 11', name:'Kobe Harbor', cat:'Do', lat:34.6832,lng:135.1929, pid:'ChIJNczY5uCOAGAR1GiEDAJTCsQ'},
+];
+
+const CITY_COLORS = {
+  Tokyo:  '#1a5580',
+  Hakone: '#1a5c35',
+  Kyoto:  '#4a3899',
+  Uji:    '#6b3580',
+  Osaka:  '#8a3018',
+  Kobe:   '#7a2545',
+};
+
+const CAT_EMOJI = {Eat:'🍜', Drink:'☕', Do:'📍', Shop:'🛍', Stay:'🏨', Bar:'🍸', Travel:'✈'};
+
+// ── Init map centered on Japan ──────────────────────────────────────────
+const map = L.map('map', {
+  center: [35.3, 136.2],
+  zoom: 7,
+  zoomControl: true,
+});
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  attribution: '© OpenStreetMap © CARTO',
+  subdomains: 'abcd',
+  maxZoom: 19,
+}).addTo(map);
+
+// ── Create custom div icon ──────────────────────────────────────────────
+function makeIcon(city, cat) {
+  const color = CITY_COLORS[city] || '#555';
+  const emoji = CAT_EMOJI[cat] || '📍';
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${color};border:2.5px solid rgba(255,255,255,0.95);box-shadow:0 2px 8px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center">
+             <span style="transform:rotate(45deg);font-size:10px">${emoji}</span>
+           </div>`,
+    iconSize: [26, 26],
+    iconAnchor: [13, 26],
+    popupAnchor: [0, -28],
+  });
+}
+
+// ── Build markers ───────────────────────────────────────────────────────
+let allMarkers = [];
+let cityGroups = {};
+
+PLACES.forEach((p, idx) => {
+  const marker = L.marker([p.lat, p.lng], {icon: makeIcon(p.city, p.cat)});
+  const mapsUrl = `https://www.google.com/maps/place/?q=place_id:${p.pid}`;
+  const color = CITY_COLORS[p.city] || '#555';
+  marker.bindPopup(`
+    <div class="popup-inner">
+      <div class="popup-cat">${p.city} · ${p.cat}</div>
+      <div class="popup-name">${p.name}</div>
+      <div class="popup-day">${p.day}</div>
+      <a class="popup-maps" href="${mapsUrl}" target="_blank">📍 Google Maps</a>
+    </div>
+  `, {maxWidth: 240, closeButton: false});
+  marker.addTo(map);
+  allMarkers.push({marker, place: p, idx});
+  if (!cityGroups[p.city]) cityGroups[p.city] = [];
+  cityGroups[p.city].push({marker, place: p, idx});
+});
+
+// ── Sidebar list ─────────────────────────────────────────────────────────
+const listEl = document.getElementById('placesList');
+const cityOrder = ['Tokyo','Hakone','Kyoto','Uji','Osaka','Kobe'];
+
+function buildList(filter) {
+  listEl.innerHTML = '';
+  const cities = filter === 'all' ? cityOrder : [filter];
+  cities.forEach(city => {
+    const group = cityGroups[city];
+    if (!group) return;
+    const groupDiv = document.createElement('div');
+    groupDiv.className = 'city-group';
+    groupDiv.innerHTML = `<div class="city-label" style="color:${CITY_COLORS[city]}">${city}</div>`;
+    group.forEach(({marker, place}) => {
+      const item = document.createElement('div');
+      item.className = 'place-item';
+      item.dataset.city = city;
+      const color = CITY_COLORS[city];
+      const catClass = 'cat-' + place.cat.toLowerCase().replace(/\s+/g,'');
+      item.innerHTML = `
+        <div class="place-dot" style="background:${color}"></div>
+        <div class="place-info">
+          <div class="place-name">${place.name}</div>
+          <div class="place-day">${place.day}</div>
+          <span class="place-cat ${catClass}">${place.cat}</span>
+        </div>`;
+      item.addEventListener('click', () => {
+        document.querySelectorAll('.place-item').forEach(el => el.classList.remove('active'));
+        item.classList.add('active');
+        map.setView([place.lat, place.lng], 15, {animate: true});
+        marker.openPopup();
+      });
+      groupDiv.appendChild(item);
+    });
+    listEl.appendChild(groupDiv);
+  });
+}
+
+// ── Filters ───────────────────────────────────────────────────────────────
+const filtersEl = document.getElementById('filters');
+['all', ...cityOrder].forEach(city => {
+  const btn = document.createElement('button');
+  btn.className = 'f-btn' + (city === 'all' ? ' active' : '');
+  btn.textContent = city === 'all' ? 'All' : city;
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.f-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    buildList(city);
+    if (city !== 'all') {
+      const places = cityGroups[city];
+      if (places && places.length) {
+        const lats = places.map(p => p.place.lat);
+        const lngs = places.map(p => p.place.lng);
+        const bounds = L.latLngBounds(
+          [Math.min(...lats) - 0.05, Math.min(...lngs) - 0.05],
+          [Math.max(...lats) + 0.05, Math.max(...lngs) + 0.05]
+        );
+        map.fitBounds(bounds, {padding: [40, 40], animate: true});
+      }
+    } else {
+      map.setView([35.3, 136.2], 7, {animate: true});
+    }
+  });
+  filtersEl.appendChild(btn);
+});
+
+buildList('all');
+</script>
+</body>
+</html>

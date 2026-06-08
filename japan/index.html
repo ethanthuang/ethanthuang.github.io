@@ -4,86 +4,118 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Japan Trip · Jun 28 – Jul 12</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&display=swap');
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f7f6f3; color: #1a1a18; font-size: 14px; line-height: 1.5; }
-  .hero { position: relative; height: 180px; overflow: hidden; }
-  .hero img { width: 100%; height: 100%; object-fit: cover; object-position: center 60%; display: block; }
-  .hero-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(10,10,8,0.35) 0%, rgba(10,10,8,0.65) 100%); }
-  .hero-text { position: absolute; bottom: 0; left: 0; right: 0; padding: 20px 24px 16px; }
-  .hero-text h1 { color: #f7f6f3; font-size: 32px; font-weight: 400; letter-spacing: 0.2px; font-family: 'Playfair Display', Georgia, serif; text-shadow: 0 2px 12px rgba(0,0,0,0.5); }
-  .header { background: #1a1a18; color: #f7f6f3; padding: 12px 24px 16px; }
-  .header h1 { font-size: 18px; font-weight: 500; letter-spacing: -0.3px; }
-  .header-sub { font-size: 12px; color: #888; margin-top: 4px; }
-  .totals { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-  .total-pill { font-size: 11px; padding: 3px 9px; border-radius: 20px; background: #2e2e2c; color: #ccc; }
-  .total-pill.green { background: #1a3320; color: #6dbd6d; }
-  .filters { display: flex; gap: 6px; padding: 12px 24px; background: #fff; border-bottom: 1px solid #e8e7e4; flex-wrap: wrap; }
-  .f-btn { font-size: 12px; padding: 4px 12px; border-radius: 20px; border: 1px solid #ddd; background: transparent; cursor: pointer; color: #555; transition: all 0.15s; }
-  .f-btn.active { background: #1a1a18; color: #fff; border-color: #1a1a18; }
-  .days { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
-  .day { background: #fff; border-radius: 10px; border: 1px solid #e8e7e4; overflow: hidden; }
-  .day-hdr { display: flex; align-items: center; gap: 8px; padding: 10px 14px; cursor: pointer; user-select: none; }
-  .day-hdr:hover { background: #faf9f7; }
-  .city-badge { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
-  .b-tokyo { background: #ddeeff; color: #1a5580; }
-  .b-kyoto { background: #ede8fb; color: #4a3899; }
-  .b-osaka { background: #fde8e0; color: #8a3018; }
-  .b-kobe  { background: #fce8f0; color: #7a2545; }
-  .b-hakone{ background: #e0f0e8; color: #1a5c35; }
-  .b-travel{ background: #ebebeb; color: #555; }
-  .day-title { font-size: 13px; font-weight: 500; flex: 1; min-width: 0; }
-  .day-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-  .day-cost { font-size: 10px; font-weight: 500; color: #2d7a2d; background: #e8f5e8; padding: 2px 7px; border-radius: 20px; }
-  .day-date { font-size: 11px; color: #999; }
-  .chev { font-size: 12px; color: #bbb; transition: transform 0.2s; }
-  .chev.open { transform: rotate(180deg); }
-  .day-body { display: none; padding: 10px 14px 12px; border-top: 1px solid #f0efe c; }
-  .day-body.open { display: block; }
-  .day-note { font-size: 11px; color: #777; background: #faf9f7; border-left: 2px solid #ddd; padding: 6px 9px; border-radius: 0 6px 6px 0; margin-bottom: 10px; line-height: 1.5; }
-  .slots { display: flex; flex-direction: column; gap: 8px; }
-  .slot { display: flex; gap: 8px; align-items: flex-start; }
-  .slot-time { font-size: 10px; color: #aaa; min-width: 42px; padding-top: 3px; font-variant-numeric: tabular-nums; flex-shrink: 0; }
-  .dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
-  .d-eat    { background: #d85a30; }
-  .d-drink  { background: #6b4fbb; }
-  .d-do     { background: #1d9e75; }
-  .d-shop   { background: #c07a10; }
-  .d-bar    { background: #c44478; }
-  .d-travel { background: #999; }
-  .d-stay   { background: #3a8add; }
-  .slot-body { flex: 1; min-width: 0; }
-  .slot-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px; }
-  .slot-text { font-size: 13px; color: #1a1a18; line-height: 1.4; }
-  .slot-price { font-size: 10px; color: #888; white-space: nowrap; }
-  .tags { display: inline-flex; gap: 3px; flex-wrap: wrap; }
-  .tag { font-size: 9px; padding: 1px 5px; border-radius: 10px; font-weight: 500; }
-  .t-must  { background: #fde8e8; color: #9a2020; }
-  .t-book  { background: #fef3e0; color: #8a5010; }
-  .t-early { background: #e8f5e8; color: #2d7a2d; }
-  .t-group { background: #ede8fb; color: #4a3899; }
-  .slot-has-photo { cursor: default; }
-  .photo-btn { font-size: 11px; background: none; border: none; cursor: pointer; padding: 0 3px; opacity: 0.5; vertical-align: middle; }
-  .photo-btn:hover { opacity: 1; }
-  .photo-panel { margin-top: 6px; }
-  .maps-link { font-size: 12px; color: #1a5580; text-decoration: none; display: inline-block; padding: 5px 10px; background: #ddeeff; border-radius: 6px; }
-  .maps-link:hover { background: #cce0f5; }
-  .slot-note { font-size: 11px; color: #888; margin-top: 2px; line-height: 1.4; }
-  .legend { display: flex; flex-wrap: wrap; gap: 10px; padding: 10px 24px 0; }
-  .leg { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #777; }
-  .leg-dot { width: 7px; height: 7px; border-radius: 50%; }
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&display=swap');
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f7f6f3; color: #1a1a18; font-size: 14px; line-height: 1.5; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+/* ── Top chrome ─────────────────────────────────────────── */
+.chrome { flex-shrink: 0; }
+.hero { position: relative; height: 130px; overflow: hidden; }
+.hero img { width: 100%; height: 100%; object-fit: cover; object-position: center 55%; display: block; }
+.hero-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(10,10,8,0.3) 0%, rgba(10,10,8,0.7) 100%); }
+.hero-text { position: absolute; bottom: 0; left: 0; right: 0; padding: 14px 20px 12px; }
+.hero-text h1 { color: #f7f6f3; font-size: 26px; font-weight: 400; font-family: 'Playfair Display', Georgia, serif; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+.hero-text .hero-date { font-size: 11px; color: rgba(247,246,243,0.6); margin-top: 2px; letter-spacing: 0.4px; }
+.header { background: #1a1a18; padding: 8px 20px 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.total-pill { font-size: 10px; padding: 2px 8px; border-radius: 20px; background: #2e2e2c; color: #ccc; }
+.total-pill.green { background: #1a3320; color: #6dbd6d; }
+.top-bar { display: flex; align-items: center; gap: 6px; padding: 7px 16px; background: #fff; border-bottom: 1px solid #e8e7e4; }
+.f-btn { font-size: 11px; padding: 3px 10px; border-radius: 20px; border: 1px solid #ddd; background: transparent; cursor: pointer; color: #555; }
+.f-btn.active { background: #1a1a18; color: #fff; border-color: #1a1a18; }
+.top-bar-sep { flex: 1; }
+.map-toggle { font-size: 11px; padding: 3px 10px; border-radius: 20px; border: 1px solid #ddd; background: #fff; cursor: pointer; color: #555; }
+.map-toggle.on { background: #ddeeff; color: #1a5580; border-color: #aaccee; }
+
+/* ── Main content area ──────────────────────────────────── */
+.main { display: flex; flex: 1; overflow: hidden; }
+
+/* ── Schedule panel ─────────────────────────────────────── */
+.schedule { flex: 1; overflow-y: auto; padding: 10px 14px 20px; min-width: 0; }
+
+/* ── Map panel ──────────────────────────────────────────── */
+.map-panel { width: 420px; flex-shrink: 0; border-left: 1px solid #e8e7e4; display: flex; flex-direction: column; overflow: hidden; transition: width 0.25s ease; }
+.map-panel.hidden { width: 0; border-left: none; overflow: hidden; }
+.map-hint { padding: 8px 12px 6px; background: #faf9f7; border-bottom: 1px solid #f0eeea; flex-shrink: 0; }
+.map-hint #dayBtnBar::-webkit-scrollbar { display: none; }
+.day-route-btn.active-route { outline: 2px solid currentColor; font-weight: 600; }
+#map { flex: 1; min-height: 0; }
+
+/* ── Day cards ──────────────────────────────────────────── */
+.day { background: #fff; border-radius: 10px; border: 1px solid #e8e7e4; overflow: visible; margin-bottom: 8px; }
+.day-hdr { display: flex; align-items: center; gap: 8px; padding: 9px 13px; cursor: pointer; user-select: none; }
+.day-hdr:hover { background: #faf9f7; }
+.city-badge { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+.b-tokyo  { background: #ddeeff; color: #1a5580; }
+.b-kyoto  { background: #ede8fb; color: #4a3899; }
+.b-osaka  { background: #fde8e0; color: #8a3018; }
+.b-kobe   { background: #fce8f0; color: #7a2545; }
+.b-hakone { background: #e0f0e8; color: #1a5c35; }
+.b-travel { background: #ebebeb; color: #555; }
+.day-title { font-size: 13px; font-weight: 500; flex: 1; min-width: 0; }
+.day-right { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+.day-cost { font-size: 10px; font-weight: 500; color: #2d7a2d; background: #e8f5e8; padding: 2px 6px; border-radius: 20px; }
+.day-date { font-size: 10px; color: #bbb; }
+.chev { font-size: 11px; color: #bbb; transition: transform 0.2s; }
+.chev.open { transform: rotate(180deg); }
+.day-body { display: none; padding: 9px 13px 11px; border-top: 1px solid #f0eeea; }
+.day-body.open { display: block; }
+.day-note { font-size: 11px; color: #777; background: #faf9f7; border-left: 2px solid #ddd; padding: 5px 8px; border-radius: 0 5px 5px 0; margin-bottom: 9px; line-height: 1.5; }
+.slots { display: flex; flex-direction: column; gap: 7px; }
+.slot { display: flex; gap: 8px; align-items: flex-start; }
+.slot.mappable { cursor: pointer; border-radius: 6px; padding: 3px 4px; margin: -3px -4px; }
+.slot.mappable:hover { background: #f0f7ff; }
+.slot.map-active { background: #ddeeff !important; }
+.slot-time { font-size: 10px; color: #aaa; min-width: 42px; padding-top: 3px; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+.d-eat    { background: #d85a30; }
+.d-drink  { background: #6b4fbb; }
+.d-do     { background: #1d9e75; }
+.d-shop   { background: #c07a10; }
+.d-bar    { background: #c44478; }
+.d-travel { background: #999; }
+.d-stay   { background: #3a8add; }
+.slot-body { flex: 1; min-width: 0; }
+.slot-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px; }
+.slot-text { font-size: 13px; color: #1a1a18; line-height: 1.4; }
+.slot-price { font-size: 10px; color: #888; white-space: nowrap; }
+.slot-pin { font-size: 9px; color: #1a5580; opacity: 0.5; }
+.tags { display: inline-flex; gap: 3px; flex-wrap: wrap; }
+.tag { font-size: 9px; padding: 1px 5px; border-radius: 10px; font-weight: 500; }
+.t-must  { background: #fde8e8; color: #9a2020; }
+.t-book  { background: #fef3e0; color: #8a5010; }
+.t-early { background: #e8f5e8; color: #2d7a2d; }
+.t-group { background: #ede8fb; color: #4a3899; }
+.slot-note { font-size: 11px; color: #888; margin-top: 1px; line-height: 1.4; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 20px 0; background: #fff; border-bottom: 1px solid #e8e7e4; }
+.leg { display: flex; align-items: center; gap: 3px; font-size: 10px; color: #888; }
+.leg-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+/* Leaflet popup */
+.leaflet-popup-content-wrapper { border-radius: 10px; border: none; box-shadow: 0 4px 16px rgba(0,0,0,0.15); padding: 0; overflow: hidden; }
+.leaflet-popup-content { margin: 0; min-width: 180px; }
+.popup-inner { padding: 10px 13px; }
+.popup-city { font-size: 9px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: #aaa; margin-bottom: 2px; }
+.popup-name { font-size: 13px; font-weight: 500; color: #1a1a18; margin-bottom: 1px; }
+.popup-day { font-size: 10px; color: #999; margin-bottom: 7px; }
+.popup-maps { font-size: 10px; color: #1a5580; text-decoration: none; background: #ddeeff; padding: 3px 8px; border-radius: 5px; display: inline-block; }
+.leaflet-popup-tip-container { display: none; }
 </style>
 </head>
 <body>
 
-<div class="hero">
-  <img src="https://images.unsplash.com/photo-1513407030348-c983a97b98d8?w=1200&q=80" alt="Japan" />
-  <div class="hero-overlay"></div>
-  <div class="hero-text"><h1>Japan Trip</h1><div style="font-size:12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:rgba(247,246,243,0.65);margin-top:4px;letter-spacing:0.5px;">Jun 28 – Jul 12, 2026</div></div>
-</div>
-<div class="header">
-  <div class="totals">
+<div class="chrome">
+  <div class="hero">
+    <img src="https://images.unsplash.com/photo-1513407030348-c983a97b98d8?w=1200&q=80" alt="Tokyo"/>
+    <div class="hero-overlay"></div>
+    <div class="hero-text">
+      <h1>Japan Trip</h1>
+      <div class="hero-date">Jun 28 – Jul 12, 2026</div>
+    </div>
+  </div>
+  <div class="header">
     <span class="total-pill">4 nights Tokyo</span>
     <span class="total-pill">1 night Hakone</span>
     <span class="total-pill">5 nights Kyoto</span>
@@ -91,27 +123,35 @@
     <span class="total-pill">Kobe + Katsuo-ji day trips</span>
     <span class="total-pill green">~$1,300–1,800pp excl. flights &amp; accommodation</span>
   </div>
+  <div class="legend">
+    <div class="leg"><div class="leg-dot d-eat"></div>Eat</div>
+    <div class="leg"><div class="leg-dot d-bar"></div>Bar</div>
+    <div class="leg"><div class="leg-dot d-drink"></div>Cafe</div>
+    <div class="leg"><div class="leg-dot d-do"></div>See &amp; Do</div>
+    <div class="leg"><div class="leg-dot d-shop"></div>Shop</div>
+    <div class="leg"><div class="leg-dot d-travel"></div>Travel</div>
+    <div style="margin-left:auto;font-size:10px;color:#bbb">📍 = click to see on map &nbsp; 💴 = per person</div>
+  </div>
+  <div class="top-bar">
+    <button class="f-btn active" onclick="filter('all',this)">All</button>
+    <button class="f-btn" onclick="filter('tokyo',this)">Tokyo</button>
+    <button class="f-btn" onclick="filter('kyoto',this)">Kyoto</button>
+    <button class="f-btn" onclick="filter('osaka',this)">Osaka</button>
+    <div class="top-bar-sep"></div>
+    <button class="map-toggle on" id="mapToggleBtn" onclick="toggleMap()">🗺 Map</button>
+  </div>
 </div>
 
-<div class="legend">
-  <div class="leg"><div class="leg-dot d-eat"></div>Eat</div>
-  <div class="leg"><div class="leg-dot d-bar"></div>Bar</div>
-  <div class="leg"><div class="leg-dot d-drink"></div>Cafe</div>
-  <div class="leg"><div class="leg-dot d-do"></div>See &amp; Do</div>
-  <div class="leg"><div class="leg-dot d-shop"></div>Shop</div>
-  <div class="leg"><div class="leg-dot d-travel"></div>Travel</div>
-  <div class="leg" style="margin-left:6px;color:#aaa">💴 = per person estimate</div>
+<div class="main">
+  <div class="schedule" id="days"></div>
+  <div class="map-panel" id="mapPanel">
+    <div class="map-hint">
+      <div style="font-size:10px;color:#aaa;margin-bottom:5px">Click a day to see its route · click a 📍 slot to fly there</div>
+      <div id="dayBtnBar" style="display:flex;gap:5px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none"></div>
+    </div>
+    <div id="map"></div>
+  </div>
 </div>
-
-<div class="filters">
-  <button class="f-btn active" onclick="filter('all',this)">All</button>
-  <button class="f-btn" onclick="filter('tokyo',this)">Tokyo</button>
-  <button class="f-btn" onclick="filter('kyoto',this)">Kyoto</button>
-  <button class="f-btn" onclick="filter('osaka',this)">Osaka</button>
-</div>
-
-
-<div class="days" id="days"></div>
 
 <script>
 const D = [
@@ -128,8 +168,8 @@ const D = [
     note:"Arrive jet-lagged. Easy first evening — enjoy the Park Hyatt. No agenda.",
     slots:[
       {t:"2:00pm", d:"travel", text:"Land HND → Shinjuku via Keikyu + transfer", price:"~$5-8", note:"Get Suica/Pasmo IC card at airport — loads to Apple/Google Wallet"},
-      {t:"3:30pm", d:"stay",   text:"Check in: Park Hyatt Tokyo (Shinjuku)", note:"Lost in Translation hotel — 52nd floor lobby. Budget $500-800/night."},
-      {t:"6:00pm", d:"do",     text:"Shinjuku wander — Omoide Yokocho (Memory Lane)", price:"free", note:"No plan needed — just explore"},
+      {t:"3:30pm", d:"stay",   pid:"ChIJJ7La1yzzGGARln2OypSj2Cw", text:"Check in: Park Hyatt Tokyo (Shinjuku)", note:"Lost in Translation hotel — 52nd floor lobby. Budget $500-800/night."},
+      {t:"6:00pm", d:"do",     pid:"ChIJP9eKBdeMGGAR0zzBXJNVj5A", text:"Shinjuku wander — Omoide Yokocho (Memory Lane)", price:"free", note:"No plan needed — just explore"},
       {t:"7:30pm", d:"eat",    text:"Local Shinjuku izakaya — easy, no reservation", price:"~$20-30"},
     ]
   },
@@ -138,7 +178,7 @@ const D = [
     note:"Sleep in, enjoy the hotel. Out by late morning. Three things only — omakase, soft serve, Hikiniku.",
     slots:[
       {t:"11:00am",d:"drink", text:"Hatoya Matcha or Wasachi — first matcha of the trip", price:"~$6-10"},
-      {t:"12:30pm",d:"eat",   text:"Lunch omakase — Sushi Kidoguchi", price:"~$20-25", tags:["book"], note:"Ten-course lunch omakase ~$20. Book ahead — noon sitting."},
+      {t:"12:00pm",d:"eat",   pid:"ChIJWdhcBWCLGGARxuyISzMZfGU", text:"Lunch omakase — Sushi Kidoguchi", price:"~$20-25", tags:["book"], note:"Ten-course lunch omakase ~$20. Book ahead — noon sitting."},
       {t:"3:00pm", d:"do",    pid:"ChIJlVne8bqMGGARtX5O6ojMvsI", text:"Harajuku / Omotesando walk — Takeshita Street, people-watching", price:"free", note:"Easy stroll; no agenda. Daikanyama is a short walk south."},
       {t:"5:00pm", d:"eat",   pid:"ChIJvaN4mziLGGAR6t4CkHY0hCw", text:"Dolce Tacubo (Daikanyama) — soft serve", price:"~$8-12", tags:["must"], note:"Open until 7pm"},
       {t:"7:00pm", d:"eat",   pid:"ChIJsWJ80PiNGGAR8aSF8OFJeu4", text:"Hikiniku to Come — Hamburg steak", price:"~$25-35", tags:["must","book"], note:"Book 1 person per slot at same time. ~$6pp fee — opens Jun 1"},
@@ -148,10 +188,10 @@ const D = [
     date:"Jul 1 (Wed)", city:"tokyo", label:"Day 3 · Tokyo → Hakone", est:"~$50-70 + ryokan",
     note:"Morning shopping, then Romancecar to Hakone. Be at Shinjuku station comfortably by 1:15pm.",
     slots:[
-      {t:"10:00am",d:"shop",  text:"Ginza / Omotesando — Onitsuka Tiger, skincare & beauty", price:"varies", note:"Leave Ginza by 12:30pm — allows time to walk to Shinjuku or grab a train"},
+      {t:"10:00am",d:"shop",  pid:"ChIJLT73m3eLGGARdRlWxF-2SnU", text:"Ginza / Omotesando — Onitsuka Tiger, skincare & beauty", price:"varies", note:"Leave Ginza by 12:30pm — allows time to walk to Shinjuku or grab a train"},
       {t:"12:30pm",d:"eat",   text:"Quick lunch near Shinjuku station", price:"~$10-15"},
-      {t:"1:30pm", d:"travel",text:"Shinjuku → Hakone-Yumoto (Odakyu Romancecar, ~85 min)", price:"~$25", note:"Reserved scenic seating — book ahead on Odakyu site"},
-      {t:"3:30pm", d:"stay",  text:"Check in: Ten-Yu Hakone (ryokan)", note:"Private onsen, kaiseki included. Budget ~$300-500pp/night."},
+      {t:"1:30pm", d:"travel",pid:"ChIJl0TCagKNGGAR9pSy4NY5l94", text:"Shinjuku → Hakone-Yumoto (Odakyu Romancecar, ~85 min)", price:"~$25", note:"Reserved scenic seating — book ahead on Odakyu site"},
+      {t:"3:30pm", d:"stay",  pid:"ChIJhfCwMAaiGWARW2IZmApNjZU", text:"Check in: Ten-Yu Hakone (ryokan)", note:"Private onsen, kaiseki included. Budget ~$300-500pp/night."},
       {t:"5:00pm", d:"do",    text:"Ryokan onsen — decompress", price:"included"},
       {t:"7:00pm", d:"eat",   text:"Kaiseki dinner at Ten-Yu (included)", price:"included", note:"Multi-course — take your time"},
     ]
@@ -161,12 +201,12 @@ const D = [
     note:"Relaxed Hakone morning loop, then Shinkansen straight to Kyoto from Odawara.",
     slots:[
       {t:"7:30am", d:"eat",   text:"Ryokan breakfast (included)", price:"included"},
-      {t:"9:00am", d:"do",    text:"Hakone loop — Lake Ashi pirate ship + Owakudani ropeway", price:"~$20-30", note:"Hakone Free Pass (~$25) covers everything. No need to rush — do what appeals."},
-      {t:"12:00pm",d:"eat",   text:"Lunch in Hakone-Yumoto or Odawara", price:"~$12-18", note:"Head to Odawara after lunch (~20 min by local train)"},
-      {t:"2:00pm", d:"travel",text:"Odawara → Kyoto via Shinkansen (Hikari, ~2h)", price:"~$80 or JR Pass"},
-      {t:"4:30pm", d:"stay",  text:"Check in: Nol Kyoto Sanjo"},
-      {t:"6:30pm", d:"do",    pid:"ChIJT8uMzZwIAWARnGzsARCjnrY", text:"Nishiki Market — samples, buy matcha", price:"free + ~$5-10", tags:["must"], note:"Taste before buying; go before closing"},
-      {t:"8:00pm", d:"eat",   text:"Light dinner — Pontocho izakaya", price:"~$20-35"},
+      {t:"8:30am", d:"do",    pid:"ChIJoT-oK-mYGWARy-ItUPA6ekk", text:"Hakone loop — Lake Ashi pirate ship + Owakudani ropeway", price:"~$20-30", note:"Hakone Free Pass (~$25) covers everything. No need to rush — do what appeals."},
+      {t:"12:30pm",d:"eat",   text:"Lunch in Hakone-Yumoto or Odawara", price:"~$12-18", note:"Head to Odawara after lunch (~20 min by local train)"},
+      {t:"2:30pm", d:"travel",text:"Odawara → Kyoto via Shinkansen (Hikari, ~2h)", price:"~$80 or JR Pass"},
+      {t:"5:00pm", d:"stay",  pid:"ChIJv8RJ2o8IAWARvb9D_eZ-Abw", text:"Check in: Nol Kyoto Sanjo"},
+      {t:"7:00pm", d:"do",    pid:"ChIJT8uMzZwIAWARnGzsARCjnrY", text:"Nishiki Market — samples, buy matcha", price:"free + ~$5-10", tags:["must"], note:"Taste before buying; go before closing"},
+      {t:"8:30pm", d:"eat",   pid:"ChIJP2DblBgJAWARAgLlF0vWT6o", text:"Light dinner — Pontocho izakaya", price:"~$20-35"},
     ]
   },
   {
@@ -178,7 +218,7 @@ const D = [
       {t:"9:30am", d:"do",    pid:"ChIJB_vchdMIAWARujTEUIZlr2I", text:"Higashiyama walk — Yasaka Pagoda, Sannenzaka, Kiyomizu-dera", price:"free-$5", note:"Take it slow — one of Kyoto's best walks"},
       {t:"12:30pm",d:"eat",   text:"Lunch — Yasaihori or local Kyoto spot", price:"~$15-25"},
       {t:"3:30pm", d:"shop",  pid:"ChIJcadqE4wIAWAR2BeU0_UOXtE", text:"Ippodo Tea — buy matcha to take home", price:"~$10-35", tags:["must"], note:"Staff help you choose the right grade. Right in central Kyoto."},
-      {t:"7:00pm", d:"eat",   text:"Dinner — Ginjo-Ramen Kubota or Pontocho izakaya", price:"~$15-30"},
+      {t:"7:00pm", d:"eat",   pid:"ChIJP2DblBgJAWARAgLlF0vWT6o", text:"Dinner — Ginjo-Ramen Kubota or Pontocho izakaya", price:"~$15-30"},
     ]
   },
   {
@@ -189,8 +229,8 @@ const D = [
       {t:"11:00am",d:"do",    pid:"ChIJ3asJPSqoAWARaecNxjPnh8s", text:"Ryoanji rock garden — sit for 20 min", price:"~$4"},
       {t:"12:30pm",d:"eat",   text:"Lunch — omurice or local Kyoto spot", price:"~$12-18"},
       {t:"3:00pm", d:"do",    pid:"ChIJh8ezaNwJAWARmKlGTSmqPJc", text:"Gion wander — Shirakawa canal, side streets", price:"free", note:"No photographing geisha/maiko — fines apply"},
-      {t:"~8:00pm",d:"travel",text:"Austin arrives — ITM ~7pm → train to Kyoto ~45 min", price:"~$10", note:"Or NRT → Shinkansen → Kyoto (~$75); buy in advance"},
-      {t:"8:30pm", d:"eat",   text:"Kaiseki — Kappo Hassun (all three)", price:"~$80-150", tags:["must","book"], note:"Book weeks ahead. Best with the full group."},
+      {t:"~7:45pm",d:"travel",text:"Austin arrives — ITM ~7pm → train to Kyoto ~45 min", price:"~$10", note:"Or NRT → Shinkansen → Kyoto (~$75); buy in advance"},
+      {t:"9:00pm", d:"eat",   pid:"ChIJdapH2MEIAWAR4M8GwwL-axs", text:"Kaiseki — Kappo Hassun (all three)", price:"~$80-150", tags:["must","book"], note:"Book weeks ahead. Austin goes straight from station — confirm late seating when booking."},
     ]
   },
   {
@@ -216,7 +256,7 @@ const D = [
       {t:"10:30am",d:"travel",text:"Arashiyama → central Kyoto (~40-50 min by bus/train)", price:"~$2-3", note:"Allow the full 50 min — Arashiyama is far west"},
       {t:"11:30am",d:"shop",  pid:"ChIJ__9gpZcIAWARuam9PUv-zBw", text:"Hayakawa Hamonoten — knives", price:"~$100-270", tags:["must","group"], note:"Physical queue only, no waitlist. Arrive at opening. Reportedly closing soon."},
       {t:"11:30am",d:"shop",  text:"(While waiting) KUOE watches + Glanta ring-making nearby", price:"watch ~$100-300 · ring ~$50-80", tags:["group"], note:"Glanta ~1hr experience; book ahead"},
-      {t:"7:00pm", d:"eat",   text:"Final Kyoto dinner — Higashiyama or Pontocho", price:"~$30-60", tags:["book"]},
+      {t:"7:00pm", d:"eat",   pid:"ChIJP2DblBgJAWARAgLlF0vWT6o", text:"Final Kyoto dinner — Higashiyama or Pontocho", price:"~$30-60", tags:["book"]},
       {t:"9:30pm", d:"bar",   pid:"ChIJTb-8AWoJAWARRnZGKmnbqgc", text:"K36 Rooftop Bar — Yasaka Pagoda views · Bar night #1", price:"~$22-27 total", note:"Hotel Seiryu Kiyomizu. Go before 9:30pm for the view."},
     ]
   },
@@ -228,8 +268,8 @@ const D = [
       {t:"11:00am",d:"do",    pid:"ChIJXSJB5UHnAGARQcEjvngsHaw", text:"Kuromon Market — fresh tuna, stalls", price:"~$10-20", tags:["must"], note:"Best before noon"},
       {t:"12:30pm",d:"eat",   text:"Rikuro Ojisan cheesecake + takoyaki — casual lunch stroll", price:"~$15-25", tags:["must"]},
       {t:"2:30pm", d:"do",    pid:"ChIJg2DcJhXnAGARCbeAHoZrPeQ", text:"Dotonbori / Shinsekai wander — Glico Running Man, neon, arcades", price:"free", note:"No agenda — just wander"},
-      {t:"5:00pm", d:"shop",  text:"Shinsaibashi / Nubian + Orange Street vintage", price:"varies", tags:["must"]},
-      {t:"7:00pm", d:"eat",   text:"Osaka Kanigin Namba — AYCE crab, wagyu, sushi, shabu-shabu", price:"~$60-80", tags:["must","book"], note:"The AYCE of the trip. Private rooms; book well ahead."},
+      {t:"5:00pm", d:"shop",  pid:"ChIJg2DcJhXnAGARCbeAHoZrPeQ", text:"Shinsaibashi / Nubian + Orange Street vintage", price:"varies", tags:["must"]},
+      {t:"7:00pm", d:"eat",   pid:"ChIJz70hzbXnAGARDtfAnqJRUdI", text:"Osaka Kanigin Namba — AYCE crab, wagyu, sushi, shabu-shabu", price:"~$60-80", tags:["must","book"], note:"The AYCE of the trip. Private rooms; book well ahead."},
     ]
   },
   {
@@ -237,13 +277,13 @@ const D = [
     note:"Forested morning hike, then Daruma temple. Back in Osaka by 3pm. Free afternoon — rest or explore.",
     slots:[
       {t:"8:30am", d:"travel",text:"Osaka → Minoh station (Hankyu Minoh Line, ~30 min)", price:"~$3"},
-      {t:"9:15am", d:"do",    pid:"ChIJE8YKbYz5AGARoCiDnK6410w", text:"Minoh Falls hike — shaded gorge trail, ~3.6mi RT", price:"free", note:"Cooler than central Osaka; take your time"},
-      {t:"11:15am",d:"travel",text:"Minoh station → Katsuo-ji by bus (~25 min)", price:"~$2", note:"Take the bus — don't walk this stretch"},
-      {t:"12:00pm",d:"do",    pid:"ChIJtX8053n5AGARND16wXHGXg0", text:"Katsuo-ji Temple — Daruma-filled hilltop temple", price:"~$3", tags:["must"], note:"Hundreds of Daruma dolls — eerie and memorable. Allow a full hour."},
-      {t:"1:30pm", d:"eat",   text:"Lunch near Minoh — trailhead spots", price:"~$10-15"},
-      {t:"3:00pm", d:"travel",text:"Return to Osaka", price:"~$3"},
-      {t:"4:00pm", d:"do",    text:"Free afternoon — rest at hotel or wander Osaka", price:"free"},
-      {t:"7:30pm", d:"eat",   text:"Dinner — Wagyu Idaten (A5 wagyu boxes, Namba)", price:"~$30-50", note:"Not AYCE. Add your name to the wait list when you get to the area."},
+      {t:"9:00am", d:"do",    pid:"ChIJE8YKbYz5AGARoCiDnK6410w", text:"Minoh Falls hike — shaded gorge trail, ~3.6mi RT", price:"free", note:"Cooler than central Osaka; take your time"},
+      {t:"11:00am",d:"travel",text:"Minoh station → Katsuo-ji by bus (~25 min)", price:"~$2", note:"Take the bus — don't walk this stretch"},
+      {t:"11:30am",d:"do",    pid:"ChIJtX8053n5AGARND16wXHGXg0", text:"Katsuo-ji Temple — Daruma-filled hilltop temple", price:"~$3", tags:["must"], note:"Hundreds of Daruma dolls — eerie and memorable. Allow a full hour."},
+      {t:"1:00pm", d:"eat",   text:"Lunch near Minoh — trailhead spots", price:"~$10-15"},
+      {t:"2:30pm", d:"travel",text:"Return to Osaka", price:"~$3"},
+      {t:"3:30pm", d:"do",    text:"Free afternoon — rest at hotel or wander Osaka", price:"free"},
+      {t:"7:30pm", d:"eat",   pid:"ChIJF9AXoBznAGARi-T-JyJ_UEQ", text:"Dinner — Wagyu Idaten (A5 wagyu boxes, Namba)", price:"~$30-50", note:"Not AYCE. Add your name to the wait list when you get to the area."},
     ]
   },
   {
@@ -251,22 +291,23 @@ const D = [
     note:"Unhurried Kobe day. Long walk, long lunch, easy return. No evening agenda.",
     slots:[
       {t:"10:00am",d:"travel",text:"Osaka → Kobe (Hankyu or JR, ~30 min)", price:"~$4", note:"No need to rush out"},
-      {t:"11:00am",d:"do",    text:"Kobe walk — Kitano Ijinkan, harbor, Nankinmachi Chinatown", price:"free-$5", note:"Give yourself 2hrs — Kobe is easy and pleasant to wander"},
-      {t:"1:30pm", d:"eat",   text:"Kobe beef lunch — A5 yakiniku or teppan", price:"~$80-150", tags:["must"], note:"Aragawa, Mouriya, or Ishida. Take your time — this is the meal of the day."},
+      {t:"11:00am",d:"do",    pid:"ChIJT6cViuCOAGARegX_ORkvbs0", text:"Kobe walk — Kitano Ijinkan, harbor, Nankinmachi Chinatown", price:"free-$5", note:"Give yourself 2hrs — Kobe is easy and pleasant to wander"},
+      {t:"1:30pm", d:"eat",   pid:"ChIJT6cViuCOAGARegX_ORkvbs0", text:"Kobe beef lunch — A5 yakiniku or teppan", price:"~$80-150", tags:["must"], note:"Aragawa, Mouriya, or Ishida. Take your time — this is the meal of the day."},
       {t:"4:30pm", d:"travel",text:"Return to Osaka", price:"~$4"},
       {t:"7:00pm", d:"eat",   text:"Light dinner — ramen or konbini (big lunch day)", price:"~$10-15"},
     ]
   },
   {
-    date:"Jul 10 (Fri)", city:"tokyo", label:"Day 12 · Osaka → Tokyo", est:"~$80-120",
-    note:"All three to Tokyo together. Afternoon arrival — MUJI, thrifting + glasses in Shimokitazawa. Golden Gai tonight.",
+    date:"Jul 10 (Fri)", city:"tokyo", label:"Day 12 · Osaka → Tokyo", est:"~$90-140",
+    note:"All three to Tokyo together. Drop bags at Ryogoku, then straight to Ginza for tendon lunch + MUJI. Shimokitazawa evening, Golden Gai to close.",
     slots:[
       {t:"9:00am", d:"eat",   text:"Breakfast — Onigiri Gorichan (Osaka's best onigiri)", price:"~$8-12"},
       {t:"10:30am",d:"travel",text:"Shinkansen Osaka → Tokyo (Nozomi, ~2h30)", price:"~$90 or JR Pass", note:"Ekiben bento on the train"},
-      {t:"1:30pm", d:"stay",  text:"Check in: YUURO Ryogoku (ryokan)"},
-      {t:"3:00pm", d:"shop",  pid:"ChIJfc-uOKqLGGAR-bVyIUWjtQo", text:"MUJI Ginza Flagship — all three", price:"varies", tags:["must","group"], note:"Japan-exclusive items; basement food floor"},
-      {t:"5:00pm", d:"shop",  pid:"ChIJ-RETm8nzGGARIpEurSKyAYI", text:"Shimokitazawa — thrifting + Blue Elephant glasses", price:"varies", tags:["must","group"], note:"~35 min from Ginza. Blue Elephant is right in Shimokita — efficient combo."},
-      {t:"7:30pm", d:"eat",   text:"Dinner in Shimokitazawa — Kissa Ray, 202 Curry, or izakaya", price:"~$15-25"},
+      {t:"1:00pm", d:"stay",  pid:"ChIJGeu4VDWJGGARdPoda8d8I3A", text:"Drop bags: YUURO Ryogoku (check-in)", note:"Drop luggage then head straight to Ginza"},
+      {t:"2:00pm", d:"eat",   pid:"ChIJRZGCCOWLGGARTbuL5FrsFcM", text:"Tendon Ginza Itsuki — tempura tendon", price:"~$15-20", tags:["must"], note:"No reservations — walk-in only. Expect 30-60 min wait. Standing queue, no chairs."},
+      {t:"3:30pm", d:"shop",  pid:"ChIJfc-uOKqLGGAR-bVyIUWjtQo", text:"MUJI Ginza Flagship — all three", price:"varies", tags:["must","group"], note:"Japan-exclusive items; basement food floor. Right next to Tendon Itsuki."},
+      {t:"5:00pm", d:"shop",  pid:"ChIJ-RETm8nzGGARIpEurSKyAYI", text:"Shimokitazawa — thrifting + Blue Elephant glasses", price:"varies", tags:["must","group"], note:"~35 min from Ginza. Blue Elephant is right in Shimokita."},
+      {t:"7:30pm", d:"eat",   pid:"ChIJ-RETm8nzGGARIpEurSKyAYI", text:"Dinner in Shimokitazawa — Kissa Ray, 202 Curry, or izakaya", price:"~$15-25"},
       {t:"9:30pm", d:"bar",   pid:"ChIJr7mGZdmMGGARjxoMFeHApXE", text:"Golden Gai (Shinjuku) — 280+ tiny bars · Bar night #2", price:"~$10-20", note:"~20 min from Shimokitazawa. Some bars are locals-only — look for welcome signs."},
     ]
   },
@@ -277,10 +318,10 @@ const D = [
       {t:"7:00am", d:"eat",   pid:"ChIJW2cLzSGLGGARXAKXv6EkbqI", text:"Tsukiji Outer Market — early stalls", price:"~$15-25", tags:["early"], note:"Maguroya Kurogin tuna nigiri. Leave by 9am."},
       {t:"9:30am", d:"drink", text:"Cokuun Coffee — Austin's rec", price:"~$8-12", tags:["book"], note:"Book ahead. Central Tokyo — easy after Tsukiji."},
       {t:"11:30am",d:"do",    pid:"ChIJGeu4VDWJGGARdPoda8d8I3A", text:"Ryogoku Kokugikan neighborhood — sumo stable walk", price:"free", tags:["must"], note:"Nagoya Basho is mid-July — just after you leave. Free and atmospheric."},
-      {t:"1:00pm", d:"eat",   text:"Ramen lunch — Oreryu Shio Ramen or Menya Musashi", price:"~$10-15"},
+      {t:"1:00pm", d:"eat",   pid:"ChIJr7mGZdmMGGARjxoMFeHApXE", text:"Ramen lunch — Oreryu Shio Ramen or Menya Musashi", price:"~$10-15"},
       {t:"2:30pm", d:"do",    text:"Mizutani Camera (Shinjuku)", price:"browsing/buying", tags:["must"]},
       {t:"4:00pm", d:"shop",  text:"Buy suitcases — ACE Luggage or BIC Camera, both in Shinjuku", price:"~$100-330", note:"Camera and suitcases back to back — same neighborhood"},
-      {t:"7:30pm", d:"eat",   text:"Final dinner — Jambo Hanare A5 wagyu yakiniku (Bunkyo)", price:"~$60-100", tags:["must"], note:"Book well ahead."},
+      {t:"7:30pm", d:"eat",   pid:"ChIJQZqLszyMGGAR_0fPsHLwL_Q", text:"Final dinner — Jambo Hanare A5 wagyu yakiniku (Bunkyo)", price:"~$60-100", tags:["must"], note:"Book well ahead."},
       {t:"10:30pm",d:"bar",   pid:"ChIJZUTGW9GMGGAROJ7G4sU221Q", text:"Bar Benfiddich (Shinjuku) — bespoke cocktails · Bar night #3", price:"~$25-40", tags:["must"], note:"Asia's 50 Best #9. Reserve via TableCheck. The send-off."},
     ]
   },
@@ -299,95 +340,265 @@ const D = [
   },
 ];
 
+// ── Place lookup (pid → {lat, lng, name, city}) ─────────────────────────
+const PLACE_DATA = {
+  'ChIJJ7La1yzzGGARln2OypSj2Cw': {lat:35.6862,lng:139.6905,name:'Park Hyatt Tokyo',city:'Tokyo'},
+  'ChIJP9eKBdeMGGAR0zzBXJNVj5A': {lat:35.6927,lng:139.6996,name:'Omoide Yokocho',city:'Tokyo'},
+  'ChIJWdhcBWCLGGARxuyISzMZfGU': {lat:35.6638,lng:139.7121,name:'Sushi Kidoguchi',city:'Tokyo'},
+  'ChIJlVne8bqMGGARtX5O6ojMvsI': {lat:35.6710,lng:139.7052,name:'Harajuku / Omotesando',city:'Tokyo'},
+  'ChIJvaN4mziLGGAR6t4CkHY0hCw': {lat:35.6499,lng:139.7055,name:'Dolce Tacubo',city:'Tokyo'},
+  'ChIJsWJ80PiNGGAR8aSF8OFJeu4': {lat:35.6593,lng:139.6976,name:'Hikiniku to Come',city:'Tokyo'},
+  'ChIJLT73m3eLGGARdRlWxF-2SnU': {lat:35.6709,lng:139.7619,name:'Onitsuka Tiger Ginza',city:'Tokyo'},
+  'ChIJl0TCagKNGGAR9pSy4NY5l94': {lat:35.6905,lng:139.6995,name:'Odakyu Romancecar',city:'Tokyo'},
+  'ChIJhfCwMAaiGWARW2IZmApNjZU': {lat:35.2387,lng:139.0442,name:'Ten-Yu Hakone',city:'Hakone'},
+  'ChIJoT-oK-mYGWARy-ItUPA6ekk': {lat:35.2096,lng:139.0035,name:'Lake Ashi',city:'Hakone'},
+  'ChIJY2br3DCfGWARMDFegqz4huQ': {lat:35.2456,lng:139.0211,name:'Owakudani Ropeway',city:'Hakone'},
+  'ChIJv8RJ2o8IAWARvb9D_eZ-Abw': {lat:35.0091,lng:135.7633,name:'Nol Kyoto Sanjo',city:'Kyoto'},
+  'ChIJT8uMzZwIAWARnGzsARCjnrY': {lat:35.0050,lng:135.7647,name:'Nishiki Market',city:'Kyoto'},
+  'ChIJP2DblBgJAWARAgLlF0vWT6o': {lat:35.0039,lng:135.7710,name:'Pontocho Alley',city:'Kyoto'},
+  'ChIJIW0uPRUPAWAR6eI6dRzKGns': {lat:34.9677,lng:135.7792,name:'Fushimi Inari Taisha',city:'Kyoto'},
+  'ChIJ7V6ukxUPAWAR1z7SkqVGAA0': {lat:34.9684,lng:135.7742,name:'Vermillion Cafe',city:'Kyoto'},
+  'ChIJB_vchdMIAWARujTEUIZlr2I': {lat:34.9947,lng:135.7847,name:'Kiyomizu-dera',city:'Kyoto'},
+  'ChIJcadqE4wIAWAR2BeU0_UOXtE': {lat:35.0145,lng:135.7674,name:'Ippodo Tea',city:'Kyoto'},
+  'ChIJvUbrwCCoAWARX2QiHCsn5A4': {lat:35.0394,lng:135.7292,name:'Kinkaku-ji',city:'Kyoto'},
+  'ChIJ3asJPSqoAWARaecNxjPnh8s': {lat:35.0344,lng:135.7182,name:'Ryoanji Rock Garden',city:'Kyoto'},
+  'ChIJh8ezaNwJAWARmKlGTSmqPJc': {lat:35.0055,lng:135.7736,name:'Gion Shirakawa',city:'Kyoto'},
+  'ChIJdapH2MEIAWAR4M8GwwL-axs': {lat:35.0049,lng:135.7738,name:'Kappo Hassun',city:'Kyoto'},
+  'ChIJCZEK8wimAWARi1RkteQaAh0': {lat:35.1221,lng:135.7629,name:'Kifune Shrine',city:'Kyoto'},
+  'ChIJqcbJieKlAWARjbvKL96apfQ': {lat:35.1253,lng:135.7639,name:'Hirobun (Kawadoko)',city:'Kyoto'},
+  'ChIJsY2yLgkRAWARRxd0gBbV7XI': {lat:34.8895,lng:135.8018,name:'Nakamura Tokichi',city:'Uji'},
+  'ChIJqyva4AwRAWARpAf6j5MUhGA': {lat:34.8893,lng:135.8077,name:'Byodo-in Temple',city:'Uji'},
+  'ChIJrYtcv-urAWAR3XzWvXv8n_s': {lat:35.0168,lng:135.6713,name:'Arashiyama Bamboo Forest',city:'Kyoto'},
+  'ChIJBXGEbQGqAWARrcXmRDMJaLQ': {lat:35.0157,lng:135.6734,name:'Tenryu-ji Garden',city:'Kyoto'},
+  'ChIJ__9gpZcIAWARuam9PUv-zBw': {lat:35.0018,lng:135.7633,name:'Hayakawa Hamonoten',city:'Kyoto'},
+  'ChIJBc57aw4JAWARNRkUdgsACvY': {lat:35.0085,lng:135.7668,name:'KUOE Watches',city:'Kyoto'},
+  'ChIJTb-8AWoJAWARRnZGKmnbqgc': {lat:34.9976,lng:135.7797,name:'K36 Rooftop Bar',city:'Kyoto'},
+  'ChIJXSJB5UHnAGARQcEjvngsHaw': {lat:34.6654,lng:135.5062,name:'Kuromon Market',city:'Osaka'},
+  'ChIJg2DcJhXnAGARCbeAHoZrPeQ': {lat:34.6686,lng:135.5031,name:'Dotonbori',city:'Osaka'},
+  'ChIJz70hzbXnAGARDtfAnqJRUdI': {lat:34.6668,lng:135.5020,name:'Osaka Kanigin Namba',city:'Osaka'},
+  'ChIJE8YKbYz5AGARoCiDnK6410w': {lat:34.8538,lng:135.4720,name:'Minoh Falls',city:'Osaka'},
+  'ChIJtX8053n5AGARND16wXHGXg0': {lat:34.8658,lng:135.4911,name:'Katsuo-ji Temple',city:'Osaka'},
+  'ChIJF9AXoBznAGARi-T-JyJ_UEQ': {lat:34.6678,lng:135.5011,name:'Wagyu Idaten',city:'Osaka'},
+  'ChIJT6cViuCOAGARegX_ORkvbs0': {lat:34.7007,lng:135.1908,name:'Kitano Ijinkan',city:'Kobe'},
+  'ChIJfc-uOKqLGGAR-bVyIUWjtQo': {lat:35.6732,lng:139.7654,name:'MUJI Ginza',city:'Tokyo'},
+  'ChIJ-RETm8nzGGARIpEurSKyAYI': {lat:35.6612,lng:139.6683,name:'Shimokitazawa',city:'Tokyo'},
+  'ChIJr7mGZdmMGGARjxoMFeHApXE': {lat:35.6941,lng:139.7048,name:'Golden Gai',city:'Tokyo'},
+  'ChIJW2cLzSGLGGARXAKXv6EkbqI': {lat:35.6648,lng:139.7703,name:'Tsukiji Outer Market',city:'Tokyo'},
+  'ChIJGeu4VDWJGGARdPoda8d8I3A': {lat:35.6970,lng:139.7935,name:'Ryogoku Kokugikan',city:'Tokyo'},
+  'ChIJQZqLszyMGGAR_0fPsHLwL_Q': {lat:35.7066,lng:139.7624,name:'Jambo Hanare',city:'Tokyo'},
+  'ChIJZUTGW9GMGGAROJ7G4sU221Q': {lat:35.6895,lng:139.6966,name:'Bar Benfiddich',city:'Tokyo'},
+  'ChIJRZGCCOWLGGARTbuL5FrsFcM': {lat:35.6740,lng:139.7643,name:'Tendon Ginza Itsuki',city:'Tokyo'},
+};
 
+const CITY_COLORS = {Tokyo:'#1a5580',Hakone:'#1a5c35',Kyoto:'#4a3899',Uji:'#6b3580',Osaka:'#8a3018',Kobe:'#7a2545'};
+const CAT_EMOJI = {eat:'🍜',drink:'☕',do:'📍',shop:'🛍',stay:'🏨',bar:'🍸',travel:'✈'};
 
+// ── Init map ─────────────────────────────────────────────────────────────
+const map = L.map('map', {center:[35.3,136.2],zoom:6,zoomControl:true});
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
+  attribution:'© OpenStreetMap © CARTO',subdomains:'abcd',maxZoom:19
+}).addTo(map);
 
-
-function togglePhoto(btn, pid) {
-  const panel = btn.closest('.slot-body').querySelector('.photo-panel');
-  if (!panel) return;
-  const open = panel.style.display === 'block';
-  panel.style.display = open ? 'none' : 'block';
-  btn.style.opacity = open ? '0.5' : '1';
+function makeIcon(city) {
+  const color = CITY_COLORS[city]||'#555';
+  return L.divIcon({
+    className:'',
+    html:`<div style="width:24px;height:24px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${color};border:2px solid rgba(255,255,255,0.95);box-shadow:0 2px 7px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center"><span style="transform:rotate(45deg);font-size:9px">📍</span></div>`,
+    iconSize:[24,24],iconAnchor:[12,24],popupAnchor:[0,-26],
+  });
 }
-function badgeClass(city) {
-  return {tokyo:'b-tokyo',kyoto:'b-kyoto',osaka:'b-osaka',kobe:'b-kobe',hakone:'b-hakone',travel:'b-travel'}[city]||'b-travel';
-}
-function badgeLabel(city) {
-  return {tokyo:'Tokyo',kyoto:'Kyoto',osaka:'Osaka',kobe:'Kobe',hakone:'Hakone',travel:'Travel'}[city]||city;
-}
-function tagHtml(tags) {
-  if(!tags||!tags.length) return '';
-  const map = {must:'★ must',book:'📅 book',early:'🌅 early',group:'👥 group'};
-  const cls = {must:'t-must',book:'t-book',early:'t-early',group:'t-group'};
-  return '<span class="tags">'+tags.map(t=>`<span class="tag ${cls[t]||'t-must'}">${map[t]||t}</span>`).join('')+'</span>';
+
+// Add all markers
+const markers = {};
+Object.entries(PLACE_DATA).forEach(([pid, p]) => {
+  const color = CITY_COLORS[p.city]||'#555';
+  const m = L.marker([p.lat,p.lng],{icon:makeIcon(p.city)});
+  m.bindPopup(`<div class="popup-inner"><div class="popup-city">${p.city}</div><div class="popup-name">${p.name}</div><a class="popup-maps" href="https://www.google.com/maps/place/?q=place_id:${pid}" target="_blank">📍 Google Maps</a></div>`,{maxWidth:220,closeButton:false});
+  m.addTo(map);
+  markers[pid] = m;
+});
+
+// ── Map toggle ───────────────────────────────────────────────────────────
+let mapVisible = true;
+function toggleMap() {
+  mapVisible = !mapVisible;
+  const panel = document.getElementById('mapPanel');
+  const btn = document.getElementById('mapToggleBtn');
+  panel.classList.toggle('hidden', !mapVisible);
+  btn.classList.toggle('on', mapVisible);
+  if (mapVisible) setTimeout(()=>map.invalidateSize(),260);
 }
 
-let currentFilter = 'all';
+// ── Route layer ──────────────────────────────────────────────────────────
+let routeLine = null;
+let routeMarkers = [];
+let activeRouteDay = null;
 
-function render() {
-  const container = document.getElementById('days');
-  container.innerHTML = '';
+function clearRoute() {
+  if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+  routeMarkers.forEach(m => map.removeLayer(m));
+  routeMarkers = [];
+}
+
+function drawDayRoute(dayIdx) {
+  clearRoute();
+  if (activeRouteDay === dayIdx) { activeRouteDay = null; updateDayBtns(); return; }
+  activeRouteDay = dayIdx;
+  updateDayBtns();
+
+  const day = D[dayIdx];
+  if (!day) return;
+  const stops = day.slots.filter(s => s.pid && PLACE_DATA[s.pid]);
+  if (stops.length === 0) return;
+
+  const color = CITY_COLORS[day.city] || '#555';
+  const latlngs = stops.map(s => [PLACE_DATA[s.pid].lat, PLACE_DATA[s.pid].lng]);
+
+  // Draw dashed polyline
+  routeLine = L.polyline(latlngs, {
+    color, weight: 2.5, opacity: 0.7, dashArray: '6 5'
+  }).addTo(map);
+
+  // Numbered markers
+  stops.forEach((s, i) => {
+    const p = PLACE_DATA[s.pid];
+    const m = L.marker([p.lat, p.lng], {
+      icon: L.divIcon({
+        className: '',
+        html: `<div style="width:22px;height:22px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff">${i+1}</div>`,
+        iconSize: [22,22], iconAnchor: [11,11], popupAnchor: [0,-14],
+      })
+    });
+    m.bindPopup(`<div class="popup-inner"><div class="popup-city">${i+1} of ${stops.length} · ${p.city}</div><div class="popup-name">${p.name}</div><div class="popup-day">${s.t}</div><a class="popup-maps" href="https://www.google.com/maps/place/?q=place_id:${s.pid}" target="_blank">📍 Google Maps</a></div>`, {maxWidth:220, closeButton:false});
+    m.addTo(map);
+    routeMarkers.push(m);
+  });
+
+  // Fit map to route with padding
+  if (latlngs.length === 1) {
+    map.flyTo(latlngs[0], 15, {duration:0.8});
+  } else {
+    map.fitBounds(L.latLngBounds(latlngs), {padding:[40,40], maxZoom:15, animate:true, duration:0.8});
+  }
+  if (!mapVisible) toggleMap();
+}
+
+function updateDayBtns() {
+  document.querySelectorAll('.day-route-btn').forEach((btn, idx) => {
+    btn.classList.toggle('active-route', idx === activeRouteDay);
+  });
+}
+
+// Build day buttons inside map hint bar
+function buildDayBtns() {
+  const bar = document.getElementById('dayBtnBar');
   D.forEach((day, i) => {
-    if (currentFilter !== 'all' && day.city !== currentFilter) return;
-    const div = document.createElement('div');
-    div.className = 'day';
-    div.innerHTML = `
-<div class="day-hdr" onclick="toggle(${i})">
-  <span class="city-badge ${badgeClass(day.city)}">${badgeLabel(day.city)}</span>
-  <span class="day-title">${day.label}</span>
-  <div class="day-right">
-    ${day.est ? `<span class="day-cost">${day.est}</span>` : ''}
-    <span class="day-date">${day.date}</span>
-    <span class="chev" id="chev-${i}">▼</span>
-  </div>
-</div>
-<div class="day-body" id="body-${i}">
-  ${day.note ? `<div class="day-note">${day.note}</div>` : ''}
-  <div class="slots">
-    ${day.slots.map(s => `
-<div class="slot${s.pid ? ' slot-has-photo' : ''}">
+    const pids = day.slots.filter(s => s.pid && PLACE_DATA[s.pid]);
+    if (pids.length === 0) return;
+    const color = CITY_COLORS[day.city] || '#888';
+    const btn = document.createElement('button');
+    btn.className = 'day-route-btn';
+    btn.textContent = day.label.replace(/^Day \d+ · /, '').slice(0,18);
+    btn.title = day.label + ' — ' + pids.length + ' stops';
+    btn.style.cssText = `font-size:10px;padding:2px 8px;border-radius:20px;border:1px solid ${color}33;background:${color}11;color:${color};cursor:pointer;white-space:nowrap;flex-shrink:0`;
+    btn.addEventListener('click', () => drawDayRoute(i));
+    bar.appendChild(btn);
+  });
+}
+
+// ── Fly to pin ───────────────────────────────────────────────────────────
+let activeSlotEl = null;
+function flyTo(pid, slotEl) {
+  if (!PLACE_DATA[pid]) return;
+  if (!mapVisible) toggleMap();
+  if (activeSlotEl) activeSlotEl.classList.remove('map-active');
+  slotEl.classList.add('map-active');
+  activeSlotEl = slotEl;
+  const p = PLACE_DATA[pid];
+  map.flyTo([p.lat, p.lng], 15, {duration:0.8});
+  setTimeout(()=>{ if(markers[pid]) markers[pid].openPopup(); }, 850);
+}
+
+// ── Render schedule ──────────────────────────────────────────────────────
+function badgeClass(city){return {tokyo:'b-tokyo',kyoto:'b-kyoto',osaka:'b-osaka',kobe:'b-kobe',hakone:'b-hakone',travel:'b-travel'}[city]||'b-travel';}
+function badgeLabel(city){return {tokyo:'Tokyo',kyoto:'Kyoto',osaka:'Osaka',kobe:'Kobe',hakone:'Hakone',travel:'Travel'}[city]||city;}
+function tagHtml(tags){
+  if(!tags||!tags.length) return '';
+  const map2={must:'★ must',book:'📅 book',early:'🌅 early',group:'👥 group'};
+  const cls={must:'t-must',book:'t-book',early:'t-early',group:'t-group'};
+  return '<span class="tags">'+tags.map(t=>`<span class="tag ${cls[t]||'t-must'}">${map2[t]||t}</span>`).join('')+'</span>';
+}
+
+let currentFilter='all';
+let slotCounter=0;
+
+function render(){
+  const container=document.getElementById('days');
+  container.innerHTML='';
+  slotCounter=0;
+  D.forEach((day,i)=>{
+    if(currentFilter!=='all'&&day.city!==currentFilter) return;
+    const div=document.createElement('div');
+    div.className='day';
+    const slotsHtml=day.slots.map(s=>{
+      const sc=slotCounter++;
+      const hasPid=!!s.pid&&!!PLACE_DATA[s.pid];
+      const clickAttr=hasPid?`onclick="flyTo('${s.pid}',document.getElementById('sc${sc}'))"`:'' ;
+      return `<div class="slot${hasPid?' mappable':''}" id="sc${sc}" ${clickAttr}>
   <span class="slot-time">${s.t}</span>
   <div class="dot d-${s.d}"></div>
   <div class="slot-body">
     <div class="slot-row">
       <span class="slot-text">${s.text}</span>
-      ${s.price ? `<span class="slot-price">💴 ${s.price}</span>` : ''}
+      ${s.price?`<span class="slot-price">💴 ${s.price}</span>`:''}
       ${tagHtml(s.tags)}
-      ${s.pid ? `<button class="photo-btn" onclick="togglePhoto(this,'${s.pid}')">📷</button>` : ''}
+      ${hasPid?'<span class="slot-pin">📍</span>':''}
     </div>
-    ${s.note ? `<div class="slot-note">${s.note}</div>` : ''}
-    ${s.pid ? `<div class="photo-panel" style="display:none"><a class="maps-link" href="https://www.google.com/maps/place/?q=place_id:${s.pid}" target="_blank">📍 View photos &amp; details on Google Maps →</a></div>` : ''}
+    ${s.note?`<div class="slot-note">${s.note}</div>`:''}
   </div>
-</div>`).join('')}
+</div>`;
+    }).join('');
+    div.innerHTML=`
+<div class="day-hdr" onclick="toggle(${i})">
+  <span class="city-badge ${badgeClass(day.city)}">${badgeLabel(day.city)}</span>
+  <span class="day-title">${day.label}</span>
+  <div class="day-right">
+    ${day.est?`<span class="day-cost">${day.est}</span>`:''}
+    <span class="day-date">${day.date}</span>
+    <span class="chev" id="chev-${i}">▼</span>
   </div>
+</div>
+<div class="day-body" id="body-${i}">
+  ${day.note?`<div class="day-note">${day.note}</div>`:''}
+  <div class="slots">${slotsHtml}</div>
 </div>`;
     container.appendChild(div);
   });
 }
 
-function toggle(i) {
-  const b = document.getElementById('body-'+i);
-  const c = document.getElementById('chev-'+i);
-  if (!b) return;
+function toggle(i){
+  const b=document.getElementById('body-'+i);
+  const c=document.getElementById('chev-'+i);
+  if(!b)return;
   b.classList.toggle('open');
-  if (c) c.classList.toggle('open');
+  if(c)c.classList.toggle('open');
 }
 
-function filter(city, btn) {
-  currentFilter = city;
-  document.querySelectorAll('.f-btn').forEach(b => b.classList.remove('active'));
+function filter(city,btn){
+  currentFilter=city;
+  document.querySelectorAll('.f-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   render();
 }
 
-
-
-
-
 render();
-// Open first day by default
-setTimeout(()=>{ const b=document.getElementById('body-0'); const c=document.getElementById('chev-0'); if(b){b.classList.add('open');} if(c){c.classList.add('open');} }, 50);
+buildDayBtns();
+setTimeout(()=>{
+  const b=document.getElementById('body-0');
+  const c=document.getElementById('chev-0');
+  if(b){b.classList.add('open');}
+  if(c){c.classList.add('open');}
+},50);
 </script>
 </body>
 </html>
