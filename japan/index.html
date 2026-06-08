@@ -102,6 +102,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .popup-day { font-size: 10px; color: #999; margin-bottom: 7px; }
 .popup-maps { font-size: 10px; color: #1a5580; text-decoration: none; background: #ddeeff; padding: 3px 8px; border-radius: 5px; display: inline-block; }
 .leaflet-popup-tip-container { display: none; }
+  .slot.has-detail { cursor: pointer; }
+  .slot.has-detail:hover .slot-text { text-decoration: underline; text-decoration-color: #ccc; text-decoration-style: dotted; }
+  .slot.detail-active { background: #f7f6f3; border-radius: 6px; }
+  .slot-detail { font-size: 11px; color: #555; margin-top: 6px; line-height: 1.6; background: #faf9f7; border-radius: 6px; padding: 8px 10px; border-left: 2px solid #e0ddd8; display: none; }
+  .slot-detail.open { display: block; }
+  .slot-detail b { color: #1a1a18; }
+  .slot-detail i { color: #777; }
 </style>
 </head>
 <body>
@@ -145,10 +152,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 <div class="main">
   <div class="schedule" id="days"></div>
   <div class="map-panel" id="mapPanel">
-    <div class="map-hint">
-      <div style="font-size:10px;color:#aaa;margin-bottom:5px">Click a day to see its route · click a 📍 slot to fly there</div>
-      <div id="dayBtnBar" style="display:flex;gap:5px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none"></div>
-    </div>
+    <div class="map-hint">Click a <span style="color:#1a5580">📍 pinned slot</span> in the schedule to fly here</div>
     <div id="map"></div>
   </div>
 </div>
@@ -168,8 +172,8 @@ const D = [
     note:"Arrive jet-lagged. Easy first evening — enjoy the Park Hyatt. No agenda.",
     slots:[
       {t:"2:00pm", d:"travel", text:"Land HND → Shinjuku via Keikyu + transfer", price:"~$5-8", note:"Get Suica/Pasmo IC card at airport — loads to Apple/Google Wallet"},
-      {t:"3:30pm", d:"stay",   pid:"ChIJJ7La1yzzGGARln2OypSj2Cw", text:"Check in: Park Hyatt Tokyo (Shinjuku)", note:"Lost in Translation hotel — 52nd floor lobby. Budget $500-800/night."},
-      {t:"6:00pm", d:"do",     pid:"ChIJP9eKBdeMGGAR0zzBXJNVj5A", text:"Shinjuku wander — Omoide Yokocho (Memory Lane)", price:"free", note:"No plan needed — just explore"},
+      {t:"3:30pm", d:"stay",   pid:"ChIJJ7La1yzzGGARln2OypSj2Cw", detail:`<b>Floors 39–52, Shinjuku Park Tower.</b> Just completed a full 19-month renovation (reopened Dec 2025) — rooms are fresh but the soul is intact. Elevator opens on the 41st floor into a sun-drenched atrium with floor-to-ceiling views. Staff will likely escort you from the taxi door. New York Bar on the 52nd floor is the Lost in Translation bar — go for a drink even if you're not eating. Kozue does Japanese kaiseki; Girandole by Alain Ducasse handles French. Pool and spa on the 47th floor, free for guests. <b>Tip:</b> ask for a Mt. Fuji-facing room — on clear mornings you can see it from bed.`, text:"Check in: Park Hyatt Tokyo (Shinjuku)", note:"Lost in Translation hotel — 52nd floor lobby. Budget $500-800/night."},
+      {t:"6:00pm", d:"do",     pid:"ChIJP9eKBdeMGGAR0zzBXJNVj5A", detail:`<b>Memory Lane</b> — a tight alley of ~20 yakitori stalls behind Shinjuku station's west exit, running since the 1940s. Smoke fills the air, charcoal grills line the counters, salarymen crowd every stool. Go for yakitori skewers and cold Sapporo. Most stalls seat 6–8 people max; just point at what you want. <b>Cash only</b> at most stalls. Best after 7pm when the smoke and atmosphere peak. Some stalls have cover charges (~¥300) — fine to ask before sitting. No English menus but that's part of it.`, text:"Shinjuku wander — Omoide Yokocho (Memory Lane)", price:"free", note:"No plan needed — just explore"},
       {t:"7:30pm", d:"eat",    text:"Local Shinjuku izakaya — easy, no reservation", price:"~$20-30"},
     ]
   },
@@ -177,23 +181,23 @@ const D = [
     date:"Jun 30 (Tue)", city:"tokyo", label:"Day 2 · Tokyo", est:"~$70-100",
     note:"Sleep in, enjoy the hotel. Out by late morning. Three things only — omakase, soft serve, Hikiniku.",
     slots:[
-      {t:"11:00am",d:"drink", text:"Hatoya Matcha or Wasachi — first matcha of the trip", price:"~$6-10"},
-      {t:"12:00pm",d:"eat",   pid:"ChIJWdhcBWCLGGARxuyISzMZfGU", text:"Lunch omakase — Sushi Kidoguchi", price:"~$20-25", tags:["book"], note:"Ten-course lunch omakase ~$20. Book ahead — noon sitting."},
-      {t:"3:00pm", d:"do",    pid:"ChIJlVne8bqMGGARtX5O6ojMvsI", text:"Harajuku / Omotesando walk — Takeshita Street, people-watching", price:"free", note:"Easy stroll; no agenda. Daikanyama is a short walk south."},
-      {t:"5:00pm", d:"eat",   pid:"ChIJvaN4mziLGGAR6t4CkHY0hCw", text:"Dolce Tacubo (Daikanyama) — soft serve", price:"~$8-12", tags:["must"], note:"Open until 7pm"},
-      {t:"7:00pm", d:"eat",   pid:"ChIJsWJ80PiNGGAR8aSF8OFJeu4", text:"Hikiniku to Come — Hamburg steak", price:"~$25-35", tags:["must","book"], note:"Book 1 person per slot at same time. ~$6pp fee — opens Jun 1"},
+      {t:"11:00am",d:"drink", detail:`Two good options near the Park Hyatt area. <b>Hatoya Matcha</b> (Shinjuku) does a precise bowl of ceremonial matcha with a small wagashi sweet — traditional, quiet, short queue. <b>Wasachi</b> is slightly more modern, good for a matcha latte or thick koicha. Either works as a gentle start before the omakase. Order koicha (thick) if you want the full experience.`, text:"Hatoya Matcha or Wasachi — first matcha of the trip", price:"~$6-10"},
+      {t:"12:00pm",d:"eat",   pid:"ChIJWdhcBWCLGGARxuyISzMZfGU", detail:`<b>Minami-Aoyama, B1F Maison Blanche.</b> Counter seats only (~10 seats). The chef speaks enough English to guide you through. Lunch omakase runs ~10 courses for ¥3,000–4,000 — one of the best value omakase in Tokyo. Expect tuna belly, sea urchin if in season, warm egg rice as a finisher. <b>Book via OpenTable or call directly</b> — lunch sittings are noon only. Saturday dinner only (no Saturday lunch). Closed Sundays. <b>Card accepted.</b>`, text:"Lunch omakase — Sushi Kidoguchi", price:"~$20-25", tags:["book"], note:"Ten-course lunch omakase ~$20. Book ahead — noon sitting."},
+      {t:"3:00pm", d:"do",    pid:"ChIJlVne8bqMGGARtX5O6ojMvsI", detail:`<b>Takeshita Street</b> (Harajuku) is the youth fashion chaos — crepe stalls, vintage, cosplay, everything loud and cheap. <b>Omotesando</b> (10 min walk south) is the polar opposite — wide tree-lined boulevard with flagship stores, architectural buildings, and good people-watching. <b>Cat Street</b> runs between them and has the best independent boutiques. Daikanyama is a further 15 min walk south — quieter, more residential, excellent for coffee and independent fashion.`, text:"Harajuku / Omotesando walk — Takeshita Street, people-watching", price:"free", note:"Easy stroll; no agenda. Daikanyama is a short walk south."},
+      {t:"5:00pm", d:"eat",   pid:"ChIJvaN4mziLGGAR6t4CkHY0hCw", detail:`<b>Spin-off of Michelin-starred Tacubo</b> restaurant. Tiny shop with a few outdoor seats. Known for impeccably balanced pastries — custard cream puff, financier, madeleine — and their signature soft serve. The soft serve changes seasonally. Expect ¥600–800 per item. Easy to miss; look for the minimal signage. <b>Closed Wednesdays.</b> Opens 11am, closes when sold out (usually by 5pm). Daikanyama Tsutaya Books is a 5 min walk — one of the best bookshops in Japan.`, text:"Dolce Tacubo (Daikanyama) — soft serve", price:"~$8-12", tags:["must"], note:"Open until 7pm"},
+      {t:"7:00pm", d:"eat",   pid:"ChIJsWJ80PiNGGAR8aSF8OFJeu4", detail:`<b>No sign on the door — look for "1129."</b> All counter seating; open kitchen so you watch everything. Each person books one slot on TableCheck — book multiple people simultaneously by each reserving individually for the same time. The beef patty arrives in stages: first rare, then medium, then well — you eat each round. No condiments needed. Full set: 3 patties + unlimited rice. <b>¥1,000 advance fee per person</b> via TableCheck on top of the food cost (~¥2,500). <b>Closed Wednesdays.</b>`, text:"Hikiniku to Come — Hamburg steak", price:"~$25-35", tags:["must","book"], note:"Book 1 person per slot at same time. ~$6pp fee — opens Jun 1"},
     ]
   },
   {
     date:"Jul 1 (Wed)", city:"tokyo", label:"Day 3 · Tokyo → Hakone", est:"~$50-70 + ryokan",
     note:"Morning shopping, then Romancecar to Hakone. Be at Shinjuku station comfortably by 1:15pm.",
     slots:[
-      {t:"10:00am",d:"shop",  pid:"ChIJLT73m3eLGGARdRlWxF-2SnU", text:"Ginza / Omotesando — Onitsuka Tiger, skincare & beauty", price:"varies", note:"Leave Ginza by 12:30pm — allows time to walk to Shinjuku or grab a train"},
+      {t:"10:00am",d:"shop",  pid:"ChIJLT73m3eLGGARdRlWxF-2SnU", detail:`<b>Onitsuka Tiger Ginza</b> (6-5-6 Ginza) is the only store offering on-site <b>custom embroidery</b> — you pick a shoe and have a design embroidered while you wait. Budget 45–60 min for the embroidery process. Staff can get overwhelmed; arrive before 11am for best service. <b>Skincare:</b> hit Matsumoto Kiyoshi or Sundrug in Ginza for Japanese pharmacy staples — Hada Labo, Shiseido, Kose at 20–30% cheaper than abroad. Tax-free on purchases over ¥5,000 with your passport.`, text:"Ginza / Omotesando — Onitsuka Tiger, skincare & beauty", price:"varies", note:"Leave Ginza by 12:30pm — allows time to walk to Shinjuku or grab a train"},
       {t:"12:30pm",d:"eat",   text:"Quick lunch near Shinjuku station", price:"~$10-15"},
-      {t:"1:30pm", d:"travel",pid:"ChIJl0TCagKNGGAR9pSy4NY5l94", text:"Shinjuku → Hakone-Yumoto (Odakyu Romancecar, ~85 min)", price:"~$25", note:"Reserved scenic seating — book ahead on Odakyu site"},
-      {t:"3:30pm", d:"stay",  pid:"ChIJhfCwMAaiGWARW2IZmApNjZU", text:"Check in: Ten-Yu Hakone (ryokan)", note:"Private onsen, kaiseki included. Budget ~$300-500pp/night."},
-      {t:"5:00pm", d:"do",    text:"Ryokan onsen — decompress", price:"included"},
-      {t:"7:00pm", d:"eat",   text:"Kaiseki dinner at Ten-Yu (included)", price:"included", note:"Multi-course — take your time"},
+      {t:"1:30pm", d:"travel",pid:"ChIJl0TCagKNGGAR9pSy4NY5l94", detail:`<b>Odakyu Romancecar</b> — reserved seating express, ~85 min, no transfers. Book on the <b>Odakyu website or app</b> in advance (~¥1,270 + ¥1,000 Romancecar surcharge). Departs from Shinjuku Station's Odakyu line platforms (west side). Window seats get mountain views. Some services have a café car. Arrives Hakone-Yumoto — from there, take the Hakone Tozan Railway up to your ryokan or the bus network. Get the <b>Hakone Free Pass</b> at Shinjuku station — covers all local transport including ropeway.`, text:"Shinjuku → Hakone-Yumoto (Odakyu Romancecar, ~85 min)", price:"~$25", note:"Reserved scenic seating — book ahead on Odakyu site"},
+      {t:"3:30pm", d:"stay",  pid:"ChIJhfCwMAaiGWARW2IZmApNjZU", detail:`<b>Hakone Kowakien Ten-Yu</b> (Ninotaira area). Private onsen rooms — each has its own indoor/outdoor bath fed by natural hot spring water. Check-in 3pm, but onsen available from arrival. Kaiseki dinner served in your room or private dining room — 10+ courses, seasonal ingredients, sake pairing available. Breakfast included (Japanese style). <b>Dress code:</b> yukata provided; wear it to dinner and communal areas. <b>Tip:</b> book the open-air terrace onsen room if available — stargazing from the bath in July.`, text:"Check in: Ten-Yu Hakone (ryokan)", note:"Private onsen, kaiseki included. Budget ~$300-500pp/night."},
+      {t:"5:00pm", d:"do",    detail:`Change into your <b>yukata</b> as soon as you arrive — it's the signal to shift pace. Most Ten-Yu rooms have a private indoor/outdoor onsen; soak before dinner. Etiquette: rinse thoroughly at the shower station before entering the bath, no swimwear. Water temperature ~42°C (107°F) — start short (10 min), exit, cool down, re-enter. The minerals in Hakone's waters (sulfurous/sodium chloride mix) leave skin noticeably soft.`, text:"Ryokan onsen — decompress", price:"included"},
+      {t:"7:00pm", d:"eat",   detail:`Typically 8–12 courses: <i>sakizuke</i> (amuse), <i>hassun</i> (seasonal platter), sashimi, simmered dish, grilled fish, meat course, rice + miso, dessert. Eat in sequence — don't rush. Sake pairing is excellent here; order by the 180ml <i>tokkuri</i> flask. If anything is unclear, staff will explain. Leave the lacquerware lids beside the bowl, not on top, when eating.`, text:"Kaiseki dinner at Ten-Yu (included)", price:"included", note:"Multi-course — take your time"},
     ]
   },
   {
@@ -201,36 +205,36 @@ const D = [
     note:"Relaxed Hakone morning loop, then Shinkansen straight to Kyoto from Odawara.",
     slots:[
       {t:"7:30am", d:"eat",   text:"Ryokan breakfast (included)", price:"included"},
-      {t:"8:30am", d:"do",    pid:"ChIJoT-oK-mYGWARy-ItUPA6ekk", text:"Hakone loop — Lake Ashi pirate ship + Owakudani ropeway", price:"~$20-30", note:"Hakone Free Pass (~$25) covers everything. No need to rush — do what appeals."},
-      {t:"12:30pm",d:"eat",   text:"Lunch in Hakone-Yumoto or Odawara", price:"~$12-18", note:"Head to Odawara after lunch (~20 min by local train)"},
+      {t:"8:30am", d:"do",    pid:"ChIJoT-oK-mYGWARy-ItUPA6ekk", detail:`<b>Go clockwise:</b> bus from ryokan → Togendai → pirate ship across Lake Ashi (30 min, views of Mt. Fuji on clear days) → Hakone-en → ropeway up to Owakudani (sulphurous volcanic valley, black eggs, fumaroles) → ropeway down to Gora → Hakone Tozan train back. <b>Hakone Free Pass</b> covers all of this. Owakudani <i>kuro-tamago</i> (black eggs boiled in sulphur springs, said to add 7 years to your life) — ¥600 for 5 eggs. <b>Mt. Fuji visibility:</b> July morning = best chance; by afternoon clouds usually obscure it.`, text:"Hakone loop — Lake Ashi pirate ship + Owakudani ropeway", price:"~$20-30", note:"Hakone Free Pass (~$25) covers everything. No need to rush — do what appeals."},
+      {t:"12:30pm",d:"eat",   detail:`<b>Hakone-Yumoto:</b> small resort town, soba shops everywhere — try <i>Hakone Yumoto Soba</i> near the station. <b>Odawara</b> (20 min by local train): much larger, better variety. Odawara is a castle town — <i>kamaboko</i> (fish cake) is the local specialty, sold at shops near the station. The station depachika has solid bento options for the train. <b>Shinkansen:</b> Odawara is on the Tokaido Shinkansen — Hikari to Kyoto takes ~2hrs. Buy on Ekinet or use JR Pass.`, text:"Lunch in Hakone-Yumoto or Odawara", price:"~$12-18", note:"Head to Odawara after lunch (~20 min by local train)"},
       {t:"2:30pm", d:"travel",text:"Odawara → Kyoto via Shinkansen (Hikari, ~2h)", price:"~$80 or JR Pass"},
-      {t:"5:00pm", d:"stay",  pid:"ChIJv8RJ2o8IAWARvb9D_eZ-Abw", text:"Check in: Nol Kyoto Sanjo"},
-      {t:"7:00pm", d:"do",    pid:"ChIJT8uMzZwIAWARnGzsARCjnrY", text:"Nishiki Market — samples, buy matcha", price:"free + ~$5-10", tags:["must"], note:"Taste before buying; go before closing"},
-      {t:"8:30pm", d:"eat",   pid:"ChIJP2DblBgJAWARAgLlF0vWT6o", text:"Light dinner — Pontocho izakaya", price:"~$20-35"},
+      {t:"5:00pm", d:"stay",  pid:"ChIJv8RJ2o8IAWARvb9D_eZ-Abw", detail:`<b>Osakaza-cho, Nakagyo Ward</b> — quiet side street off Sanjo, 5 min walk to Nishiki Market. Modern boutique with traditional Japanese materials — hinoki wood soaking tub in every room, in-room washer/dryer. Free sake and soft drinks in the lobby from 5pm. Staff speak excellent English and will help with restaurant bookings. <b>Tax-free shopping assistance</b> available at front desk. Luggage storage available if arriving before check-in.`, text:"Check in: Nol Kyoto Sanjo"},
+      {t:"7:00pm", d:"do",    pid:"ChIJT8uMzZwIAWARnGzsARCjnrY", detail:`<b>"Kyoto's Kitchen"</b> — 400-year-old covered market, 390m long, ~100 shops. Best before 5pm; some stalls close early. <b>What to try:</b> dashi-maki tamago (egg roll), fresh yuba (tofu skin), pickled vegetables, nama-fu (wheat gluten sweets), grilled skewers. <b>For matcha:</b> taste before buying — ask for a sample. Ippodo (nearby, separate) is better for serious matcha purchases. Nishiki is good for gift tins and ceremonial sets. <b>Crowded on weekends</b> — move assertively.`, text:"Nishiki Market — samples, buy matcha", price:"free + ~$5-10", tags:["must"], note:"Taste before buying; go before closing"},
+      {t:"8:30pm", d:"eat",   pid:"ChIJP2DblBgJAWARAgLlF0vWT6o", detail:`<b>Pontocho</b> is a narrow alley running parallel to the Kamo River — one of Kyoto's most atmospheric streets. Lit by lanterns at night, lined with traditional machiya townhouses converted to restaurants. In summer, many restaurants open <b>kawayuka</b> (riverside terraces over the river) — worth specifically requesting a terrace table. Walk the alley first; peek at menus outside before committing. Price range varies widely — mid-range izakayas are excellent. Avoid places with plastic food displays in the window.`, text:"Light dinner — Pontocho izakaya", price:"~$20-35"},
     ]
   },
   {
     date:"Jul 3 (Fri)", city:"kyoto", label:"Day 5 · Kyoto · Fushimi + Higashiyama", est:"~$40-70",
     note:"Dawn temples while it's cool, then slow down. Free from 3pm — wander or rest.",
     slots:[
-      {t:"5:30am", d:"do",    pid:"ChIJIW0uPRUPAWAR6eI6dRzKGns", text:"Fushimi Inari Taisha — before sunrise", price:"free", tags:["early","must"], note:"Lower torii gates crowd-free; back by 8am before the heat builds"},
-      {t:"7:30am", d:"drink", pid:"ChIJ7V6ukxUPAWAR1z7SkqVGAA0", text:"Vermillion Cafe (near Fushimi Inari)", price:"~$6-9", tags:["must"]},
-      {t:"9:30am", d:"do",    pid:"ChIJB_vchdMIAWARujTEUIZlr2I", text:"Higashiyama walk — Yasaka Pagoda, Sannenzaka, Kiyomizu-dera", price:"free-$5", note:"Take it slow — one of Kyoto's best walks"},
+      {t:"5:30am", d:"do",    pid:"ChIJIW0uPRUPAWAR6eI6dRzKGns", detail:`<b>Free, open 24 hours.</b> The famous thousand torii gates climb 4km up Mt. Inari. At 5:30am you'll have the lower gates (the photogenic part) almost completely to yourself. The full hike to the summit takes 2–3 hours; in July heat skip the top and turn back at <i>Yotsutsuji</i> intersection (~45 min up) where you get the best city views. <b>Inari foxes</b> (<i>kitsune</i>) are everywhere — they're the shrine's messengers. The main shrine building at the base is the best-preserved; take your time there before the crowds hit.`, text:"Fushimi Inari Taisha — before sunrise", price:"free", tags:["early","must"], note:"Lower torii gates crowd-free; back by 8am before the heat builds"},
+      {t:"7:30am", d:"drink", pid:"ChIJ7V6ukxUPAWAR1z7SkqVGAA0", detail:`<b>5-31 Fukakusa Kaidoguchi-cho</b> — just outside the shrine entrance. Australian-style specialty coffee in a wooden building with a pond terrace. Flat whites are excellent. Also does breakfast: avocado toast, egg dishes, yogurt bowls. Opens 8:30am. <b>Gets busy from 9am</b> as the shrine crowds build — ideal to stop here right after your dawn visit. Outdoor terrace seating overlooks a small garden. The banana bread and cheese toast are both standouts.`, text:"Vermillion Cafe (near Fushimi Inari)", price:"~$6-9", tags:["must"]},
+      {t:"9:30am", d:"do",    pid:"ChIJB_vchdMIAWARujTEUIZlr2I", detail:`<b>Walk south to north:</b> start at Kiyomizu-dera (¥500 entry, opens 6am — you'll catch it early), walk down Sannenzaka and Ninenzaka (beautiful preserved stone-paved lanes, good souvenir shops — avoid tourist trap matcha soft serve here, it's overpriced), continue to Yasaka Pagoda (exterior only, iconic photo spot), then Gion. <b>Kiyomizu-dera</b> is built on a wooden platform overlooking the city — the veranda view is the main event. Don't miss the <i>Otowa waterfall</i> at the base — three streams for longevity, love, and success.`, text:"Higashiyama walk — Yasaka Pagoda, Sannenzaka, Kiyomizu-dera", price:"free-$5", note:"Take it slow — one of Kyoto's best walks"},
       {t:"12:30pm",d:"eat",   text:"Lunch — Yasaihori or local Kyoto spot", price:"~$15-25"},
-      {t:"3:30pm", d:"shop",  pid:"ChIJcadqE4wIAWAR2BeU0_UOXtE", text:"Ippodo Tea — buy matcha to take home", price:"~$10-35", tags:["must"], note:"Staff help you choose the right grade. Right in central Kyoto."},
-      {t:"7:00pm", d:"eat",   pid:"ChIJP2DblBgJAWARAgLlF0vWT6o", text:"Dinner — Ginjo-Ramen Kubota or Pontocho izakaya", price:"~$15-30"},
+      {t:"3:30pm", d:"shop",  pid:"ChIJcadqE4wIAWAR2BeU0_UOXtE", detail:`<b>52 Tokiwagi-cho, Nakagyo Ward</b> — in business since 1717. The shop sells matcha, gyokuro, sencha, and hojicha. Staff speak English and will ask about your use (drinking vs cooking, preferred bitterness level) to guide you. <b>Limit: 2 tins of matcha per person.</b> Ask for <i>Kitano-no-mukashi</i> (their best ceremonial grade, usually in stock) or <i>Unkaku</i> for a step below. The in-store café lets you try before buying — koicha and usucha with a wagashi sweet. <b>Closed Wednesdays.</b> Get there early — sells out by afternoon.`, text:"Ippodo Tea — buy matcha to take home", price:"~$10-35", tags:["must"], note:"Staff help you choose the right grade. Right in central Kyoto."},
+      {t:"7:00pm", d:"eat",   pid:"ChIJP2DblBgJAWARAgLlF0vWT6o", detail:`<b>Ginjo-Ramen Kubota:</b> Kyoto-style ramen — lighter, cleaner chicken or dashi broth vs. Tokyo tonkotsu. Look for the kotteri (rich) or assari (light) options. Queue forms before opening. <b>Pontocho alternative:</b> walk the alley, pick an izakaya with a kawayuka terrace — ask "kawayuka wa arimasu ka?" (do you have riverside seating?). July is the peak kawayuka season. Order a flight of local Kyoto sake (<i>fushimi</i> style — soft, slightly sweet) to pair with small plates.`, text:"Dinner — Ginjo-Ramen Kubota or Pontocho izakaya", price:"~$15-30"},
     ]
   },
   {
     date:"Jul 4 (Sat)", city:"kyoto", label:"Day 6 · Kyoto · Austin arrives 🎉", est:"~$130-180",
     note:"Easy day — two temples, afternoon free. Austin arrives evening. Kaiseki together tonight.",
     slots:[
-      {t:"9:30am", d:"do",    pid:"ChIJvUbrwCCoAWARX2QiHCsn5A4", text:"Kinkaku-ji (Golden Pavilion)", price:"~$3", note:"Go early — gets crowded by 10am"},
-      {t:"11:00am",d:"do",    pid:"ChIJ3asJPSqoAWARaecNxjPnh8s", text:"Ryoanji rock garden — sit for 20 min", price:"~$4"},
+      {t:"9:30am", d:"do",    pid:"ChIJvUbrwCCoAWARX2QiHCsn5A4", detail:`<b>¥500 entry (cash or card).</b> Opens 9am — go early, it gets extremely crowded by 10am. The pavilion is a 14th-century Zen temple covered in gold leaf, reflected in Kyokochi pond. <b>You cannot enter the building</b> — it's a viewing experience from the garden path. The circuit takes 20–30 min. Photography is unrestricted. <b>Tip:</b> the best reflection shot is from the first viewpoint right after the entrance — don't rush past it. Skip the matcha stall inside; overpriced.`, text:"Kinkaku-ji (Golden Pavilion)", price:"~$3", note:"Go early — gets crowded by 10am"},
+      {t:"11:00am",d:"do",    pid:"ChIJ3asJPSqoAWARaecNxjPnh8s", detail:`<b>¥600 entry.</b> The most famous karesansui (dry landscape) rock garden in Japan — 15 rocks arranged in white gravel, only 14 visible from any single viewpoint. There's no "correct" interpretation; the garden is designed for meditation, not explanation. <b>Sit on the wooden veranda</b> and just look. Most tourists spend 5 minutes and leave — sit for longer and the crowd thins. The adjacent Kyoyochi pond garden is larger and also beautiful. JR bus from Kyoto Station is the easiest access.`, text:"Ryoanji rock garden — sit for 20 min", price:"~$4"},
       {t:"12:30pm",d:"eat",   text:"Lunch — omurice or local Kyoto spot", price:"~$12-18"},
-      {t:"3:00pm", d:"do",    pid:"ChIJh8ezaNwJAWARmKlGTSmqPJc", text:"Gion wander — Shirakawa canal, side streets", price:"free", note:"No photographing geisha/maiko — fines apply"},
+      {t:"3:00pm", d:"do",    pid:"ChIJh8ezaNwJAWARmKlGTSmqPJc", detail:`<b>Shirakawa</b> is a narrow stone-paved canal lined with weeping willows and traditional ochaya (teahouse) buildings — the most atmospheric 200m in Kyoto, especially at dusk. <b>Hanamikoji Street</b> runs south from Shijo-dori — the main geisha district artery. You may spot <i>maiko</i> (apprentice geisha) walking to appointments in the early evening. <b>Photography rules:</b> no photographing geisha or maiko on the street in Gion — enforced with ¥10,000 fines. The best area to wander is the small streets east of Hanamikoji.`, text:"Gion wander — Shirakawa canal, side streets", price:"free", note:"No photographing geisha/maiko — fines apply"},
       {t:"~7:45pm",d:"travel",text:"Austin arrives — ITM ~7pm → train to Kyoto ~45 min", price:"~$10", note:"Or NRT → Shinkansen → Kyoto (~$75); buy in advance"},
-      {t:"9:00pm", d:"eat",   pid:"ChIJdapH2MEIAWAR4M8GwwL-axs", text:"Kaiseki — Kappo Hassun (all three)", price:"~$80-150", tags:["must","book"], note:"Book weeks ahead. Austin goes straight from station — confirm late seating when booking."},
+      {t:"9:00pm", d:"eat",   pid:"ChIJdapH2MEIAWAR4M8GwwL-axs", detail:`<b>95-4 Sueyoshi-cho, Higashiyama</b> — Michelin-starred kappo (counter kaiseki). 50+ years in operation. Chef prepares in front of you at the counter. Lunch from ¥11,000pp, dinner ¥20,000–30,000pp. <b>Book weeks ahead</b> via Tableall, Tablecheck, or through your hotel concierge. English-speaking staff available. Courses: 8–10 dishes highlighting seasonal Kyoto ingredients — <i>hamo</i> (pike conger, a summer specialty), yuba, local vegetables. Sake pairing recommended. <b>Confirm late seating when booking</b> given Austin's arrival time.`, text:"Kaiseki — Kappo Hassun (all three)", price:"~$80-150", tags:["must","book"], note:"Book weeks ahead. Austin goes straight from station — confirm late seating when booking."},
     ]
   },
   {
@@ -238,10 +242,10 @@ const D = [
     note:"Kibune for morning + river lunch, Uji for matcha afternoon. Allow the full 1.5hr transit between — not a quick hop.",
     slots:[
       {t:"8:30am", d:"travel",text:"Kyoto → Kibune (Eizan Line to Kibuneguchi, ~45 min)", price:"~$4 each way"},
-      {t:"9:30am", d:"do",    pid:"ChIJCZEK8wimAWARi1RkteQaAh0", text:"Kibune shrine + river path walk", price:"free", note:"Small, beautiful village. ~45 min is plenty."},
-      {t:"11:30am",d:"eat",   pid:"ChIJqcbJieKlAWARjbvKL96apfQ", text:"Kawadoko river dining — lunch on platform over the river", price:"~$40-70", tags:["must","book","group"], note:"July-only. Book ahead — Hirobun or Kibune Yoshinoya. Allow 1.5-2hrs for the meal."},
+      {t:"9:30am", d:"do",    pid:"ChIJCZEK8wimAWARi1RkteQaAh0", detail:`<b>Kifune Shrine</b> — a series of three shrines connected by a forested riverside path. The main shrine at the bottom has the famous stone lantern staircase. The <b>water fortune</b> (<i>mizu omikuji</i>) is unique: a blank slip of paper becomes readable when placed in the water — popular, ¥200. Walk uphill past the kawadoko restaurants to the upper shrines (Yui-no-Yashiro, Okunomiya) — the forest gets quieter and more dramatic. Temperature is noticeably cooler than Kyoto city — bring a light layer even in July.`, text:"Kibune shrine + river path walk", price:"free", note:"Small, beautiful village. ~45 min is plenty."},
+      {t:"11:30am",d:"eat",   pid:"ChIJqcbJieKlAWARjbvKL96apfQ", detail:`<b>Hirobun</b> (87 Kuramakibune-cho) — the best-known kawadoko restaurant in Kibune. In summer they serve <b>nagashi somen</b>: noodles sent down a bamboo flume with flowing water; you catch them with chopsticks. You sit on a wooden platform literally over the river. Opens 11am; arrive before 9:30am to be first in line — waits of 1.5–2.5hrs are common. The meal itself is ~45 min. <b>Closed Wednesdays.</b> <b>Book ahead</b> for the kawadoko full course (the sit-down dinner version) — for lunch the nagashi somen is walk-in queuing only. <b>Price:</b> nagashi somen set ~¥4,000pp.`, text:"Kawadoko river dining — lunch on platform over the river", price:"~$40-70", tags:["must","book","group"], note:"July-only. Book ahead — Hirobun or Kibune Yoshinoya. Allow 1.5-2hrs for the meal."},
       {t:"2:00pm", d:"travel",text:"Kibune → Uji (Demachiyanagi → Kyoto → Uji, ~1.5hrs)", price:"~$6-8", note:"Build in the full time — no shortcut"},
-      {t:"3:30pm", d:"drink", pid:"ChIJsY2yLgkRAWARRxd0gBbV7XI", text:"Nakamura Tokichi Honten — matcha teahouse", price:"~$15-25", tags:["must","group"], note:"Arrive by 3:30pm — stops seating 4-5pm in summer"},
+      {t:"3:30pm", d:"drink", pid:"ChIJsY2yLgkRAWARRxd0gBbV7XI", detail:`<b>Ichiban-10 Uji</b> — founded 1854, the most famous matcha teahouse in Uji. Opens 10am. <b>Queue system:</b> take a number ticket and come back — check your place in line via QR code on your phone. Wait times: 1.5–2hrs on weekends, 45–90 min weekdays. <b>What to order:</b> the matcha parfait (served in bamboo, with strawberry and whipped cream) is the signature dish. Also: matcha soba set, thick ceremonial matcha with wagashi sweet. The garden outside is beautiful — good for photos while waiting. <b>Matcha to buy:</b> they sell their own grade tins — worth picking up a tin to take home, different from Ippodo.`, text:"Nakamura Tokichi Honten — matcha teahouse", price:"~$15-25", tags:["must","group"], note:"Arrive by 3:30pm — stops seating 4-5pm in summer"},
       {t:"5:30pm", d:"travel",text:"Uji → Kyoto (~25 min)", price:"~$3"},
       {t:"7:00pm", d:"eat",   text:"Dinner in Kyoto — light izakaya", price:"~$20-35"},
     ]
@@ -250,14 +254,14 @@ const D = [
     date:"Jul 6 (Mon)", city:"kyoto", label:"Day 8 · Kyoto · Arashiyama + Knives", est:"~$80-160 + shopping",
     note:"Dawn bamboo, slow Arashiyama morning — no rush. Cross city mid-morning for knives. Final Kyoto night.",
     slots:[
-      {t:"6:00am", d:"do",    pid:"ChIJrYtcv-urAWAR3XzWvXv8n_s", text:"Arashiyama Bamboo Forest", price:"free", tags:["must","early"], note:"Empty at dawn — brutal by 9am in July heat"},
-      {t:"7:00am", d:"do",    pid:"ChIJBXGEbQGqAWARrcXmRDMJaLQ", text:"Tenryu-ji garden + Kimono Forest at Randen station", price:"~$3", note:"Right there — no transit needed"},
+      {t:"6:00am", d:"do",    pid:"ChIJrYtcv-urAWAR3XzWvXv8n_s", detail:`<b>Free, open 24 hours.</b> The main grove path is about 200m — shorter than photos suggest but genuinely magical at dawn. The bamboo creates a rustling canopy sound in the wind; you won't hear it if the tourist crowds are there. <b>Go no later than 6:15am</b> — even in July it's almost empty then. From the bamboo grove: walk north to Jojakko-ji temple (moss-covered, quiet, ¥500), or south to Tenryu-ji garden. <b>Rickshaw rides</b> are available if you want a lazy tour of the wider Arashiyama area after the grove.`, text:"Arashiyama Bamboo Forest", price:"free", tags:["must","early"], note:"Empty at dawn — brutal by 9am in July heat"},
+      {t:"7:00am", d:"do",    pid:"ChIJBXGEbQGqAWARrcXmRDMJaLQ", detail:`<b>Tenryu-ji:</b> ¥500 for the garden only (recommended — the temple interior adds little). One of Japan's finest Zen gardens — a borrowed landscape design using the Arashiyama mountains as backdrop. The sogenchi pond is particularly beautiful. Ranks as a UNESCO World Heritage site. <b>Kimono Forest:</b> free, located at Arashiyama Randen station — 600 poles of Kyoto kimono fabric illuminated by fiber-optic light. More interesting at dusk/night but still visually striking in the morning.`, text:"Tenryu-ji garden + Kimono Forest at Randen station", price:"~$3", note:"Right there — no transit needed"},
       {t:"9:00am", d:"eat",   text:"Breakfast near Arashiyama", price:"~$15-20"},
       {t:"10:30am",d:"travel",text:"Arashiyama → central Kyoto (~40-50 min by bus/train)", price:"~$2-3", note:"Allow the full 50 min — Arashiyama is far west"},
-      {t:"11:30am",d:"shop",  pid:"ChIJ__9gpZcIAWARuam9PUv-zBw", text:"Hayakawa Hamonoten — knives", price:"~$100-270", tags:["must","group"], note:"Physical queue only, no waitlist. Arrive at opening. Reportedly closing soon."},
-      {t:"11:30am",d:"shop",  text:"(While waiting) KUOE watches + Glanta ring-making nearby", price:"watch ~$100-300 · ring ~$50-80", tags:["group"], note:"Glanta ~1hr experience; book ahead"},
-      {t:"7:00pm", d:"eat",   pid:"ChIJP2DblBgJAWARAgLlF0vWT6o", text:"Final Kyoto dinner — Higashiyama or Pontocho", price:"~$30-60", tags:["book"]},
-      {t:"9:30pm", d:"bar",   pid:"ChIJTb-8AWoJAWARRnZGKmnbqgc", text:"K36 Rooftop Bar — Yasaka Pagoda views · Bar night #1", price:"~$22-27 total", note:"Hotel Seiryu Kiyomizu. Go before 9:30pm for the view."},
+      {t:"11:30am",d:"shop",  pid:"ChIJ__9gpZcIAWARuam9PUv-zBw", detail:`<b>Higashimaecho, Shimogyo Ward</b> — open Mon–Fri 9am–6pm, <b>closed weekends.</b> Master Hayakawa is 88 years old and has been making knives for 70+ years. The shop has been in the family for over 120 years. Small selection — typically gyuto (chef's knife), deba, petty knives. He communicates via phone translator. <b>Process:</b> arrive at opening, join the physical queue. He works slowly and carefully with each customer. Knives range ¥15,000–40,000. He will sharpen any knife you bring. <b>Retiring in 2027</b> — one of the last chances to buy from him directly. Cash only. Bring patience.`, text:"Hayakawa Hamonoten — knives", price:"~$100-270", tags:["must","group"], note:"Physical queue only, no waitlist. Arrive at opening. Reportedly closing soon."},
+      {t:"11:30am",d:"shop",  detail:`<b>KUOE Kyoto</b> (224 Eirakucho, Nakagyo) — custom watch microbrand. Select the case, dial, strap, and buckle from their components; assembled in-store in 15–20 min. Watches from ~¥25,000–60,000. No appointment needed but gets busy — ticket system when crowded. <b>Closed Tuesdays.</b> <b>Glanta</b> (also nearby) — silver ring-making workshop, ~1hr experience, ~¥5,000–8,000. Book ahead at their website. You hammer, file, and finish your own ring. A good parallel activity while others queue for knives.`, text:"(While waiting) KUOE watches + Glanta ring-making nearby", price:"watch ~$100-300 · ring ~$50-80", tags:["group"], note:"Glanta ~1hr experience; book ahead"},
+      {t:"7:00pm", d:"eat",   pid:"ChIJP2DblBgJAWARAgLlF0vWT6o", detail:`Last Kyoto dinner — make it count. <b>Higashiyama options:</b> Ryokan Yoshikawa (kaiseki, beautiful garden room), or one of the narrow-lane restaurants off Ninen-zaka. <b>Pontocho:</b> kawayuka terrace in July — ask specifically for riverside seating. <b>Budget pick:</b> Kyoto Gogyo (noodles in burnt miso broth, a Kyoto specialty — dramatically different from standard ramen). Whatever you pick, book ahead — Kyoto restaurants fill up fast in summer.`, text:"Final Kyoto dinner — Higashiyama or Pontocho", price:"~$30-60", tags:["book"]},
+      {t:"9:30pm", d:"bar",   pid:"ChIJTb-8AWoJAWARRnZGKmnbqgc", detail:`<b>4F Hotel Seiryu Kiyomizu, 2-204-2 Kiyomizu, Higashiyama.</b> ¥1,100 cover charge per person (includes one drink token). Opens 3pm. The only bar in Kyoto at eye level with the Yasaka Pagoda — the view is genuinely spectacular at night. <b>Go before 9pm</b> for the best views (rooftop terrace gets full, you may be seated inside instead after a certain hour). Cocktails ¥1,500–2,500. <b>Reserve online</b> for a minimum spend if you want guaranteed seating — walk-in is possible but uncertain. Edward can order a mocktail or sparkling water; bar makes non-alcoholic options.`, text:"K36 Rooftop Bar — Yasaka Pagoda views · Bar night #1", price:"~$22-27 total", note:"Hotel Seiryu Kiyomizu. Go before 9:30pm for the view."},
     ]
   },
   {
@@ -265,11 +269,11 @@ const D = [
     note:"No need to rush out of Kyoto. Osaka arrival late morning — Kuromon, Dotonbori wander, big AYCE dinner.",
     slots:[
       {t:"10:00am",d:"travel",text:"Check out → Osaka by Hankyu express", price:"~$4", note:"~30 min. No rush — leave when ready."},
-      {t:"11:00am",d:"do",    pid:"ChIJXSJB5UHnAGARQcEjvngsHaw", text:"Kuromon Market — fresh tuna, stalls", price:"~$10-20", tags:["must"], note:"Best before noon"},
-      {t:"12:30pm",d:"eat",   text:"Rikuro Ojisan cheesecake + takoyaki — casual lunch stroll", price:"~$15-25", tags:["must"]},
-      {t:"2:30pm", d:"do",    pid:"ChIJg2DcJhXnAGARCbeAHoZrPeQ", text:"Dotonbori / Shinsekai wander — Glico Running Man, neon, arcades", price:"free", note:"No agenda — just wander"},
-      {t:"5:00pm", d:"shop",  pid:"ChIJg2DcJhXnAGARCbeAHoZrPeQ", text:"Shinsaibashi / Nubian + Orange Street vintage", price:"varies", tags:["must"]},
-      {t:"7:00pm", d:"eat",   pid:"ChIJz70hzbXnAGARDtfAnqJRUdI", text:"Osaka Kanigin Namba — AYCE crab, wagyu, sushi, shabu-shabu", price:"~$60-80", tags:["must","book"], note:"The AYCE of the trip. Private rooms; book well ahead."},
+      {t:"11:00am",d:"do",    pid:"ChIJXSJB5UHnAGARQcEjvngsHaw", detail:`<b>"Osaka's Kitchen"</b> — 170+ vendors in a covered arcade, running since 1902. <b>Best before noon</b> when stalls are fully stocked and fish is freshest. <b>What to eat:</b> fresh tuna (look for <i>Maguro Yamamoto</i> or similar tuna specialists — ¥500 for a thick nigiri made in front of you), grilled seafood on skewers, fresh oysters, wagyu skewers. Some stalls have standing counters. <b>Tip:</b> walk the full length first to compare, then come back to the best stalls. Some vendors accept card but <b>cash is safer.</b>`, text:"Kuromon Market — fresh tuna, stalls", price:"~$10-20", tags:["must"], note:"Best before noon"},
+      {t:"12:30pm",d:"eat",   detail:`<b>Rikuro Ojisan:</b> flagship near Namba Station — the jiggly soufflé cheesecake comes out of the oven every 15 min, branded with the Rikuro mascot face. One whole cake is ¥935 — get it warm. Eat it within a few hours (collapses as it cools, still tastes good though). <b>Takoyaki:</b> Osaka is the home of takoyaki — try <i>Wanaka</i> or <i>Aizuya</i> in Dotonbori rather than the tourist-facing chains. The batter should be creamy inside, crispy outside. Standard order: 8 balls (~¥700). Toppings: mayo, bonito flakes, seaweed, sauce.`, text:"Rikuro Ojisan cheesecake + takoyaki — casual lunch stroll", price:"~$15-25", tags:["must"]},
+      {t:"2:30pm", d:"do",    pid:"ChIJg2DcJhXnAGARCbeAHoZrPeQ", detail:`<b>Dotonbori:</b> the neon canal strip — Glico Running Man is the main photo spot. The canal boat tour (¥1,000) is a good way to see it. <b>Best at night</b> when the signs are lit. <b>Shinsekai:</b> retro 1920s entertainment district south of Dotonbori — <i>Tsutenkaku</i> tower, kushikatsu restaurants everywhere, vintage pachinko arcades. A different Osaka from the tourist strip. <b>Kushikatsu rule:</b> never double-dip the communal sauce — serious faux pas.`, text:"Dotonbori / Shinsekai wander — Glico Running Man, neon, arcades", price:"free", note:"No agenda — just wander"},
+      {t:"5:00pm", d:"shop",  pid:"ChIJg2DcJhXnAGARCbeAHoZrPeQ", detail:`<b>Shinsaibashi-suji</b> covered arcade runs 600m — everything from Uniqlo to Hermès. <b>Nubian</b> (Shinsaibashi area) — curated Japanese streetwear, hard-to-find brands, good curation for men and women. <b>Amerika-mura</b> (American Village) nearby has Osaka's best vintage and streetwear concentration. <b>Orange Street</b> (Kitahorie) is a quieter design-forward street — furniture, homewares, boutique fashion, coffee. More adult than Amerika-mura.`, text:"Shinsaibashi / Nubian + Orange Street vintage", price:"varies", tags:["must"]},
+      {t:"7:00pm", d:"eat",   pid:"ChIJz70hzbXnAGARDtfAnqJRUdI", detail:`<b>ECS Dai 32 Building 7F-B, 3-4-16 Namba.</b> 2 min from Namba Station. Opens noon weekends, 4pm weekdays. Private rooms available — request when booking. Course options include snow crab, red snow crab, king crab. <b>Also included:</b> wagyu sushi, uni hand rolls, ikura rolls, shabu-shabu. 90-min or 120-min time slots. <b>Book well ahead</b> — this is the marquee meal of the Osaka leg. <b>Card accepted.</b> Dress smart-casual for private room dining.`, text:"Osaka Kanigin Namba — AYCE crab, wagyu, sushi, shabu-shabu", price:"~$60-80", tags:["must","book"], note:"The AYCE of the trip. Private rooms; book well ahead."},
     ]
   },
   {
@@ -277,13 +281,13 @@ const D = [
     note:"Forested morning hike, then Daruma temple. Back in Osaka by 3pm. Free afternoon — rest or explore.",
     slots:[
       {t:"8:30am", d:"travel",text:"Osaka → Minoh station (Hankyu Minoh Line, ~30 min)", price:"~$3"},
-      {t:"9:00am", d:"do",    pid:"ChIJE8YKbYz5AGARoCiDnK6410w", text:"Minoh Falls hike — shaded gorge trail, ~3.6mi RT", price:"free", note:"Cooler than central Osaka; take your time"},
+      {t:"9:00am", d:"do",    pid:"ChIJE8YKbYz5AGARoCiDnK6410w", detail:`<b>From Minoh Station</b> (Hankyu Minoh Line) — trail starts at the station. Well-paved, family-friendly path along a stream through a forested gorge. <b>About 2.8km to the falls</b> (Minoh Otaki, 33m high) — allow 1.5hrs RT at a relaxed pace. The gorge is noticeably cooler than central Osaka. <b>Look out for:</b> Japanese macaques along the trail — don't feed them. <b>Dried maple leaves</b> (momiji tempura) sold at stalls near the trailhead — a Minoh specialty, unusual and worth trying. Wear comfortable shoes; path is paved but uneven in places.`, text:"Minoh Falls hike — shaded gorge trail, ~3.6mi RT", price:"free", note:"Cooler than central Osaka; take your time"},
       {t:"11:00am",d:"travel",text:"Minoh station → Katsuo-ji by bus (~25 min)", price:"~$2", note:"Take the bus — don't walk this stretch"},
-      {t:"11:30am",d:"do",    pid:"ChIJtX8053n5AGARND16wXHGXg0", text:"Katsuo-ji Temple — Daruma-filled hilltop temple", price:"~$3", tags:["must"], note:"Hundreds of Daruma dolls — eerie and memorable. Allow a full hour."},
+      {t:"11:30am",d:"do",    pid:"ChIJtX8053n5AGARND16wXHGXg0", detail:`<b>2914-1 Aomatani, Minoh.</b> ¥400 entry. A hilltop Shingon Buddhist temple famous for thousands of <i>Daruma</i> dolls left by worshippers — covering railings, stone walls, stairs, everywhere. The atmosphere is genuinely eerie and memorable, especially in morning mist. <b>Stamp rally:</b> collect stamps at different points around the temple grounds — the postcard you receive is stamped at each checkpoint. <b>IC card required</b> for the bus (¥800 from Minoh Station — no cash). The temple grounds take about 1hr to explore properly.`, text:"Katsuo-ji Temple — Daruma-filled hilltop temple", price:"~$3", tags:["must"], note:"Hundreds of Daruma dolls — eerie and memorable. Allow a full hour."},
       {t:"1:00pm", d:"eat",   text:"Lunch near Minoh — trailhead spots", price:"~$10-15"},
       {t:"2:30pm", d:"travel",text:"Return to Osaka", price:"~$3"},
       {t:"3:30pm", d:"do",    text:"Free afternoon — rest at hotel or wander Osaka", price:"free"},
-      {t:"7:30pm", d:"eat",   pid:"ChIJF9AXoBznAGARi-T-JyJ_UEQ", text:"Dinner — Wagyu Idaten (A5 wagyu boxes, Namba)", price:"~$30-50", note:"Not AYCE. Add your name to the wait list when you get to the area."},
+      {t:"7:30pm", d:"eat",   pid:"ChIJF9AXoBznAGARi-T-JyJ_UEQ", detail:`<b>Kaiko Building 2F, 1-8-20 Namba.</b> No reservations — join the digital queue via QR code when you arrive in the area. Wait times 1.5–2.5hrs in the evening; the queue lets you wait elsewhere (wander Dotonbori) and receive a notification. <b>What to order:</b> the wagyu tataki jyu (seared wagyu over rice box) with uni and ikura on top is the signature. Also: 100g wagyu bowl. Chef Akira prepares the wagyu for 3 days before service. <b>Closed Mondays.</b> Counter seating only. Cash and card accepted.`, text:"Dinner — Wagyu Idaten (A5 wagyu boxes, Namba)", price:"~$30-50", note:"Not AYCE. Add your name to the wait list when you get to the area."},
     ]
   },
   {
@@ -291,8 +295,8 @@ const D = [
     note:"Unhurried Kobe day. Long walk, long lunch, easy return. No evening agenda.",
     slots:[
       {t:"10:00am",d:"travel",text:"Osaka → Kobe (Hankyu or JR, ~30 min)", price:"~$4", note:"No need to rush out"},
-      {t:"11:00am",d:"do",    pid:"ChIJT6cViuCOAGARegX_ORkvbs0", text:"Kobe walk — Kitano Ijinkan, harbor, Nankinmachi Chinatown", price:"free-$5", note:"Give yourself 2hrs — Kobe is easy and pleasant to wander"},
-      {t:"1:30pm", d:"eat",   pid:"ChIJT6cViuCOAGARegX_ORkvbs0", text:"Kobe beef lunch — A5 yakiniku or teppan", price:"~$80-150", tags:["must"], note:"Aragawa, Mouriya, or Ishida. Take your time — this is the meal of the day."},
+      {t:"11:00am",d:"do",    pid:"ChIJT6cViuCOAGARegX_ORkvbs0", detail:`<b>Kitano Ijinkan:</b> hillside district of 19th-century Western-style residences built by foreign merchants and diplomats. Several are open as museums (¥500–1,500 each or combo ticket). The Weathercock House and Moegi House are the most atmospheric. <b>Kobe Harbor:</b> Meriken Park has good views of the bay and the iconic red-and-white lighthouse. <b>Nankinmachi Chinatown:</b> compact but lively — <i>butaman</i> (pork bun) from Rousoken is the signature Kobe Chinatown food, eaten standing outside.`, text:"Kobe walk — Kitano Ijinkan, harbor, Nankinmachi Chinatown", price:"free-$5", note:"Give yourself 2hrs — Kobe is easy and pleasant to wander"},
+      {t:"1:30pm", d:"eat",   pid:"ChIJT6cViuCOAGARegX_ORkvbs0", detail:`<b>Three well-regarded options:</b> <b>Aragawa</b> — one of the world's most expensive restaurants, teppan, ¥50,000+pp, book months ahead. <b>Mouriya</b> (est. 1910) — more accessible, teppan, ¥15,000–25,000 lunch course, book 2–4 weeks ahead. <b>Ishida</b> — yakiniku style, grill your own A5 at the table, ¥10,000–20,000, easier to book. <b>Kobe beef specifically:</b> must be Tajima-gyu cattle, raised in Hyogo Prefecture, BMS marbling score 6+, certified. The fat melts at body temperature. Order the <i>sirloin</i> and <i>fillet</i> — avoid the cheaper cuts that don't showcase the marbling. <b>Card accepted</b> at all three.`, text:"Kobe beef lunch — A5 yakiniku or teppan", price:"~$80-150", tags:["must"], note:"Aragawa, Mouriya, or Ishida. Take your time — this is the meal of the day."},
       {t:"4:30pm", d:"travel",text:"Return to Osaka", price:"~$4"},
       {t:"7:00pm", d:"eat",   text:"Light dinner — ramen or konbini (big lunch day)", price:"~$10-15"},
     ]
@@ -303,26 +307,26 @@ const D = [
     slots:[
       {t:"9:00am", d:"eat",   text:"Breakfast — Onigiri Gorichan (Osaka's best onigiri)", price:"~$8-12"},
       {t:"10:30am",d:"travel",text:"Shinkansen Osaka → Tokyo (Nozomi, ~2h30)", price:"~$90 or JR Pass", note:"Ekiben bento on the train"},
-      {t:"1:00pm", d:"stay",  pid:"ChIJGeu4VDWJGGARdPoda8d8I3A", text:"Drop bags: YUURO Ryogoku (check-in)", note:"Drop luggage then head straight to Ginza"},
-      {t:"2:00pm", d:"eat",   pid:"ChIJRZGCCOWLGGARTbuL5FrsFcM", text:"Tendon Ginza Itsuki — tempura tendon", price:"~$15-20", tags:["must"], note:"No reservations — walk-in only. Expect 30-60 min wait. Standing queue, no chairs."},
-      {t:"3:30pm", d:"shop",  pid:"ChIJfc-uOKqLGGAR-bVyIUWjtQo", text:"MUJI Ginza Flagship — all three", price:"varies", tags:["must","group"], note:"Japan-exclusive items; basement food floor. Right next to Tendon Itsuki."},
-      {t:"5:00pm", d:"shop",  pid:"ChIJ-RETm8nzGGARIpEurSKyAYI", text:"Shimokitazawa — thrifting + Blue Elephant glasses", price:"varies", tags:["must","group"], note:"~35 min from Ginza. Blue Elephant is right in Shimokita."},
-      {t:"7:30pm", d:"eat",   pid:"ChIJ-RETm8nzGGARIpEurSKyAYI", text:"Dinner in Shimokitazawa — Kissa Ray, 202 Curry, or izakaya", price:"~$15-25"},
-      {t:"9:30pm", d:"bar",   pid:"ChIJr7mGZdmMGGARjxoMFeHApXE", text:"Golden Gai (Shinjuku) — 280+ tiny bars · Bar night #2", price:"~$10-20", note:"~20 min from Shimokitazawa. Some bars are locals-only — look for welcome signs."},
+      {t:"1:00pm", d:"stay",  pid:"ChIJGeu4VDWJGGARdPoda8d8I3A", detail:`<b>Ryogoku area</b> — the sumo district of Tokyo. YUURO is a ryokan-style hotel near Ryogoku Station. The area has a different character from Shinjuku — older, more local, quieter. If the room isn't ready, leave bags at the front desk and head to Ginza. <b>Nearby:</b> Ryogoku Kokugikan (sumo arena), Edo-Tokyo Museum, chanko-nabe restaurants (sumo wrestler stew — a proper hearty meal).`, text:"Drop bags: YUURO Ryogoku (check-in)", note:"Drop luggage then head straight to Ginza"},
+      {t:"2:00pm", d:"eat",   pid:"ChIJRZGCCOWLGGARTbuL5FrsFcM", detail:`<b>3-1 Ginza, 2F Inz 1 Building.</b> 2 min from Yurakucho Station. <b>No reservations — walk-in only.</b> Queue forms before 11am opening. On a Friday afternoon, 30–60 min is realistic. No chairs in the queue — stand outside. Counter seating only (~20 seats). <b>What to order:</b> the Special Tendon (¥1,900) — 2 prawns, squid, chicken, half-boiled egg, 4 vegetables, miso soup, pickles over rice. The tempura batter is lighter than typical tendon; the sauce is sweet-savory. <b>Halal certified.</b> Cash and card accepted. Done in 20–25 min once seated.`, text:"Tendon Ginza Itsuki — tempura tendon", price:"~$15-20", tags:["must"], note:"No reservations — walk-in only. Expect 30-60 min wait. Standing queue, no chairs."},
+      {t:"3:30pm", d:"shop",  pid:"ChIJfc-uOKqLGGAR-bVyIUWjtQo", detail:`<b>3-3-5 Ginza</b> — the global flagship, 6 floors. <b>B1F:</b> MUJI Diner and bakery (good for a quick bite). <b>1F:</b> food products, snacks, Japanese-exclusive items. <b>2F–3F:</b> clothing — Japan sizing, Japan-exclusive colorways and fabrics. <b>4F:</b> stationery and household. <b>5F:</b> furniture. <b>6F:</b> MUJI Hotel lobby (you can walk through). <b>Japan exclusives to look for:</b> specific fabric clothing items, Japanese food seasonings, reMUJI (upcycled items). Tax-free counter on 1F — bring your passport. <b>Opens 11am.</b>`, text:"MUJI Ginza Flagship — all three", price:"varies", tags:["must","group"], note:"Japan-exclusive items; basement food floor. Right next to Tendon Itsuki."},
+      {t:"5:00pm", d:"shop",  pid:"ChIJ-RETm8nzGGARIpEurSKyAYI", detail:`<b>Shimokitazawa</b> is Tokyo's vintage and independent culture hub — dozens of shops within a 10 min walk radius. <b>Best vintage shops:</b> Flamingo, New York Joe Exchange, Pigsty, 2nd Street. Most open 11am–9pm. <b>Blue Elephant</b> (near south exit) — independent optician specializing in unique frames, many Japanese designers. Prescription lenses can be cut same-day or next day. Frame-only browsing is fine. <b>Also worth noting:</b> Shimokitazawa has excellent small live music venues, independent bookshops (Garage Department), and good coffee (Bear Pond Espresso, Café Fuga).`, text:"Shimokitazawa — thrifting + Blue Elephant glasses", price:"varies", tags:["must","group"], note:"~35 min from Ginza. Blue Elephant is right in Shimokita."},
+      {t:"7:30pm", d:"eat",   pid:"ChIJ-RETm8nzGGARIpEurSKyAYI", detail:`<b>Kissa Ray</b> — retro-style kissaten (Japanese coffee shop) with thick sandwiches and Japanese curry, good atmosphere. <b>202 Curry</b> — Japanese-style curry (thicker, sweeter than Indian, served over rice with pickles), casual, inexpensive. <b>Izakaya option:</b> Shimokitazawa has excellent small izakayas — look for handwritten signs outside, a good indicator of a locals' spot. The Bon bar area near the south exit has a cluster of small bars and restaurants worth wandering.`, text:"Dinner in Shimokitazawa — Kissa Ray, 202 Curry, or izakaya", price:"~$15-25"},
+      {t:"9:30pm", d:"bar",   pid:"ChIJr7mGZdmMGGARjxoMFeHApXE", detail:`<b>Kabukicho 1-1-6, Shinjuku</b> — six narrow alleys with 200+ micro-bars, each seating 5–10 people. Each bar has its own theme, music, and personality. <b>Finding the right bar:</b> look for signs in English that say "tourists welcome" — some bars are regulars-only (cover charges as high as ¥2,000 are a sign you may not be welcome). <b>Good starting bars:</b> Albatross (multi-floor, eclectic), Deathmatch in Hell (rock, friendly), Bar Albatross G (quieter). Order whatever the bar specializes in — many have a signature drink or spirit. <b>Edward:</b> most bars have non-alcoholic options; ask "nomi mono wa arimasu ka?" (do you have soft drinks?). Best after 10pm when the atmosphere peaks.`, text:"Golden Gai (Shinjuku) — 280+ tiny bars · Bar night #2", price:"~$10-20", note:"~20 min from Shimokitazawa. Some bars are locals-only — look for welcome signs."},
     ]
   },
   {
     date:"Jul 11 (Sat)", city:"tokyo", label:"Day 13 · Tokyo · Final group day", est:"~$120-180 + shopping",
     note:"Last full day together. Spread across the day — no rushing. Big dinner, Benfiddich to close.",
     slots:[
-      {t:"7:00am", d:"eat",   pid:"ChIJW2cLzSGLGGARXAKXv6EkbqI", text:"Tsukiji Outer Market — early stalls", price:"~$15-25", tags:["early"], note:"Maguroya Kurogin tuna nigiri. Leave by 9am."},
-      {t:"9:30am", d:"drink", text:"Cokuun Coffee — Austin's rec", price:"~$8-12", tags:["book"], note:"Book ahead. Central Tokyo — easy after Tsukiji."},
-      {t:"11:30am",d:"do",    pid:"ChIJGeu4VDWJGGARdPoda8d8I3A", text:"Ryogoku Kokugikan neighborhood — sumo stable walk", price:"free", tags:["must"], note:"Nagoya Basho is mid-July — just after you leave. Free and atmospheric."},
-      {t:"1:00pm", d:"eat",   pid:"ChIJr7mGZdmMGGARjxoMFeHApXE", text:"Ramen lunch — Oreryu Shio Ramen or Menya Musashi", price:"~$10-15"},
-      {t:"2:30pm", d:"do",    text:"Mizutani Camera (Shinjuku)", price:"browsing/buying", tags:["must"]},
-      {t:"4:00pm", d:"shop",  text:"Buy suitcases — ACE Luggage or BIC Camera, both in Shinjuku", price:"~$100-330", note:"Camera and suitcases back to back — same neighborhood"},
-      {t:"7:30pm", d:"eat",   pid:"ChIJQZqLszyMGGAR_0fPsHLwL_Q", text:"Final dinner — Jambo Hanare A5 wagyu yakiniku (Bunkyo)", price:"~$60-100", tags:["must"], note:"Book well ahead."},
-      {t:"10:30pm",d:"bar",   pid:"ChIJZUTGW9GMGGAROJ7G4sU221Q", text:"Bar Benfiddich (Shinjuku) — bespoke cocktails · Bar night #3", price:"~$25-40", tags:["must"], note:"Asia's 50 Best #9. Reserve via TableCheck. The send-off."},
+      {t:"7:00am", d:"eat",   pid:"ChIJW2cLzSGLGGARXAKXv6EkbqI", detail:`<b>4-16 Tsukiji, Chuo.</b> The inner wholesale market moved to Toyosu in 2018; the outer market remains. <b>Best before 10am</b> — many stalls close by noon. <b>What to eat:</b> fresh tuna nigiri at Maguroya Kurogin (thick-cut, outstanding), grilled scallops on the shell (~¥400), tamagoyaki (egg roll, ¥300–400 — there's always a queue), fresh oysters. <b>Kiyomura's tuna toro</b> is famous but has a long queue — decide if the wait is worth it. Walk the outer market first to see everything before committing. <b>Cash preferred.</b>`, text:"Tsukiji Outer Market — early stalls", price:"~$15-25", tags:["early"], note:"Maguroya Kurogin tuna nigiri. Leave by 9am."},
+      {t:"9:30am", d:"drink", detail:`Specialty coffee in Kiyosumi-Shirakawa, Tokyo's most concentrated coffee neighborhood. Book ahead via their website — they run a tasting experience format, not just a café. Expect a guided tasting of 2–3 single-origin coffees with explanation of origin, processing, and flavour profile. About 1hr. <b>Dress code:</b> none, but it's a quiet focused experience — not a grab-and-go. Other great coffee nearby in Kiyosumi-Shirakawa: Arise Coffee Roasters, Blue Bottle Coffee (their first Japan location was here), Fuglen (Norwegian, excellent).`, text:"Cokuun Coffee — Austin's rec", price:"~$8-12", tags:["book"], note:"Book ahead. Central Tokyo — easy after Tsukiji."},
+      {t:"11:30am",d:"do",    pid:"ChIJGeu4VDWJGGARdPoda8d8I3A", detail:`<b>The Kokugikan</b> (sumo arena) hosts 3 of Japan's 6 annual basho (tournaments) — January, May, September. You're visiting in July, so no tournament. <b>What to do:</b> walk the perimeter of the arena (exterior is impressive), look for the sumo stable buildings nearby — you can hear wrestlers training in the morning (5:30–8am) if you walk past the stable windows. <b>Chankonabe restaurants</b> in the area serve the high-protein stew sumo wrestlers eat — try Chanko Tomoegata for lunch. The <b>Sumo Museum</b> (inside Kokugikan, free) is small but good if open.`, text:"Ryogoku Kokugikan neighborhood — sumo stable walk", price:"free", tags:["must"], note:"Nagoya Basho is mid-July — just after you leave. Free and atmospheric."},
+      {t:"1:00pm", d:"eat",   pid:"ChIJr7mGZdmMGGARjxoMFeHApXE", detail:`<b>Oreryu Shio Ramen</b> (Omotesando) — salt-based (shio) broth, cleaner and more delicate than tonkotsu. The counter forces you to focus on the bowl. <b>Menya Musashi</b> (Shinjuku, multiple locations) — tsukemen (dipping noodles) specialist. You dip thick noodles into a concentrated dipping broth, eating them cool. Two very different styles — pick based on what you haven't tried yet on the trip. Both open for lunch 11am–3pm; queue before opening if you want to avoid a wait.`, text:"Ramen lunch — Oreryu Shio Ramen or Menya Musashi", price:"~$10-15"},
+      {t:"2:30pm", d:"do",    detail:`<b>Note: Mizutani Camera is in Ueno</b> (4-6-6 Ueno, not Shinjuku) — about 25 min from Shinjuku by train. Specializes in <b>used film cameras</b> (Leica, Contax, Nikon F, vintage Rolleiflex) and used digital gear. Not a tourist trap — serious camera shop with knowledgeable staff. Prices are fair; expect ¥10,000–80,000+ for a good film body. They test everything before selling. <b>Akihabara</b> also has secondhand camera shops worth browsing (Map Camera, Lemon Camera) — on the way from Ueno to Shinjuku.`, text:"Mizutani Camera (Shinjuku)", price:"browsing/buying", tags:["must"]},
+      {t:"4:00pm", d:"shop",  detail:`<b>ACE Luggage</b> (Shinjuku Takashimaya Times Square, 6F) — Japanese luggage brand, excellent quality hard-shell cases, better value than Rimowa. <b>BIC Camera</b> (west Shinjuku, large branch) — carries ACE, Samsonite, Rimowa, and generic brands. <b>Proteca</b> (ACE sub-brand) is the premium Japanese option — extremely light, Japanese-airport-roller quality. Budget ¥15,000–30,000 for a solid medium case. <b>Tax-free on luggage</b> with passport. Have your existing bags at the hotel — easier to size-compare.`, text:"Buy suitcases — ACE Luggage or BIC Camera, both in Shinjuku", price:"~$100-330", note:"Camera and suitcases back to back — same neighborhood"},
+      {t:"7:30pm", d:"eat",   pid:"ChIJQZqLszyMGGAR_0fPsHLwL_Q", detail:`<b>3-27-9 Hongo, Bunkyo</b> — small shop (10 seats), reservation essential. <b>Book via TableCheck or Tableall</b> — releases 1 month ahead, books out fast. Order the "recommended set" — the chef guides you on grill time for each cut. The sirloin is extraordinary; the beef tongue (from the tip — be warned, tougher than standard tongue) is divisive. <b>Grilling tips:</b> staff will demonstrate — high heat, short time for marbled cuts. The whole peach ice cream dessert is a signature finish. <b>Bunkyo to Shinjuku:</b> ~25 min by Marunouchi or Oedo line for Benfiddich after dinner.`, text:"Final dinner — Jambo Hanare A5 wagyu yakiniku (Bunkyo)", price:"~$60-100", tags:["must"], note:"Book well ahead."},
+      {t:"10:30pm",d:"bar",   pid:"ChIJZUTGW9GMGGAROJ7G4sU221Q", detail:`<b>1-13-7 Nishishinjuku, 9F</b> — the elevator takes you straight up. ~15 seats total. Bartender Hiroyasu Kayama grows many of his own ingredients on a farm and distills some spirits in-house. <b>No menu</b> — you describe flavours and moods, he interprets. Tell him if you prefer citrus-forward, spirit-forward, floral, smoky etc. <b>Price:</b> ¥2,500–3,500 per cocktail, 2–3 drinks typical. Cover charge ~¥500. <b>Reserve via TableCheck</b> — releases monthly, books out immediately. If you can't get a reservation, a small walk-in queue forms at opening (7pm) — arrive at 6:50pm and wait. <b>Opens 7pm, last order 1am.</b>`, text:"Bar Benfiddich (Shinjuku) — bespoke cocktails · Bar night #3", price:"~$25-40", tags:["must"], note:"Asia's 50 Best #9. Reserve via TableCheck. The send-off."},
     ]
   },
   {
@@ -330,8 +334,8 @@ const D = [
     note:"Edward & Ethan fly NRT → TPE at 8:40pm. At NRT by 5:30pm. Austin departs separately.",
     slots:[
       {t:"Morning",d:"eat",   text:"Final konbini breakfast — 7-Eleven near Tokyo Tower", price:"~$5-8", note:"Strong zero + onigiri — full circle"},
-      {t:"12:00pm",d:"eat",   text:"Last lunch — Tsujihan kaisendon or sushi stand", price:"~$15-25"},
-      {t:"2:00pm", d:"shop",  text:"Last-minute souvenirs — Tokyo Station", price:"~$20-40"},
+      {t:"12:00pm",d:"eat",   detail:`<b>Tsujihan</b> (multiple Tokyo locations) — kaisendon (seafood rice bowl) with the signature "second course" trick: eat the toppings first, then pour dashi broth over the remaining rice for a soup course. The tuna, salmon, and ikura bowl (~¥2,000) is the move. <b>Queue:</b> arrives early, 30–60 min typical. <b>Near Tokyo Station:</b> the station's Gransta food hall (B1F) has excellent sushi counters and bento — ideal for a last meal before heading to Narita.`, text:"Last lunch — Tsujihan kaisendon or sushi stand", price:"~$15-25"},
+      {t:"2:00pm", d:"shop",  detail:`<b>Tokyo Station Gransta and Ichibangai</b> (B1F, 1F) — best last-minute souvenir shopping in Tokyo. <b>Top picks:</b> Tokyo Banana (the mascot sweet), Shigure (matcha and sweet varieties), Yokumoku cigar cookies, Kit Kat Japan exclusives (matcha, sake, wasabi), Tokyo ramen kits, Japanese curry packets (S&B, Vermont Curry). Budget ¥500–2,000 per item. <b>Suica penguin</b> goods at the Suica shop — stationery and accessories featuring the IC card mascot. Everything tax-free with passport. Narita Express departs from Narita Express platforms at Tokyo Station — arrive 15 min early.`, text:"Last-minute souvenirs — Tokyo Station", price:"~$20-40"},
       {t:"4:00pm", d:"travel",text:"Head to Narita (NRT) — Narita Express (~90 min)", price:"~$15"},
       {t:"8:40pm", d:"travel", text:"JX 805 · NRT → TPE", note:"Arrives 11:20pm"},
       {t:"9:35am+1",d:"travel", text:"DL 0068 · TPE → SEA", note:"Jul 13 · Arrives 6:00am (same day)"},
@@ -429,83 +433,6 @@ function toggleMap() {
   if (mapVisible) setTimeout(()=>map.invalidateSize(),260);
 }
 
-// ── Route layer ──────────────────────────────────────────────────────────
-let routeLine = null;
-let routeMarkers = [];
-let activeRouteDay = null;
-
-function clearRoute() {
-  if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
-  routeMarkers.forEach(m => map.removeLayer(m));
-  routeMarkers = [];
-}
-
-function drawDayRoute(dayIdx) {
-  clearRoute();
-  if (activeRouteDay === dayIdx) { activeRouteDay = null; updateDayBtns(); return; }
-  activeRouteDay = dayIdx;
-  updateDayBtns();
-
-  const day = D[dayIdx];
-  if (!day) return;
-  const stops = day.slots.filter(s => s.pid && PLACE_DATA[s.pid]);
-  if (stops.length === 0) return;
-
-  const color = CITY_COLORS[day.city] || '#555';
-  const latlngs = stops.map(s => [PLACE_DATA[s.pid].lat, PLACE_DATA[s.pid].lng]);
-
-  // Draw dashed polyline
-  routeLine = L.polyline(latlngs, {
-    color, weight: 2.5, opacity: 0.7, dashArray: '6 5'
-  }).addTo(map);
-
-  // Numbered markers
-  stops.forEach((s, i) => {
-    const p = PLACE_DATA[s.pid];
-    const m = L.marker([p.lat, p.lng], {
-      icon: L.divIcon({
-        className: '',
-        html: `<div style="width:22px;height:22px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff">${i+1}</div>`,
-        iconSize: [22,22], iconAnchor: [11,11], popupAnchor: [0,-14],
-      })
-    });
-    m.bindPopup(`<div class="popup-inner"><div class="popup-city">${i+1} of ${stops.length} · ${p.city}</div><div class="popup-name">${p.name}</div><div class="popup-day">${s.t}</div><a class="popup-maps" href="https://www.google.com/maps/place/?q=place_id:${s.pid}" target="_blank">📍 Google Maps</a></div>`, {maxWidth:220, closeButton:false});
-    m.addTo(map);
-    routeMarkers.push(m);
-  });
-
-  // Fit map to route with padding
-  if (latlngs.length === 1) {
-    map.flyTo(latlngs[0], 15, {duration:0.8});
-  } else {
-    map.fitBounds(L.latLngBounds(latlngs), {padding:[40,40], maxZoom:15, animate:true, duration:0.8});
-  }
-  if (!mapVisible) toggleMap();
-}
-
-function updateDayBtns() {
-  document.querySelectorAll('.day-route-btn').forEach((btn, idx) => {
-    btn.classList.toggle('active-route', idx === activeRouteDay);
-  });
-}
-
-// Build day buttons inside map hint bar
-function buildDayBtns() {
-  const bar = document.getElementById('dayBtnBar');
-  D.forEach((day, i) => {
-    const pids = day.slots.filter(s => s.pid && PLACE_DATA[s.pid]);
-    if (pids.length === 0) return;
-    const color = CITY_COLORS[day.city] || '#888';
-    const btn = document.createElement('button');
-    btn.className = 'day-route-btn';
-    btn.textContent = day.label.replace(/^Day \d+ · /, '').slice(0,18);
-    btn.title = day.label + ' — ' + pids.length + ' stops';
-    btn.style.cssText = `font-size:10px;padding:2px 8px;border-radius:20px;border:1px solid ${color}33;background:${color}11;color:${color};cursor:pointer;white-space:nowrap;flex-shrink:0`;
-    btn.addEventListener('click', () => drawDayRoute(i));
-    bar.appendChild(btn);
-  });
-}
-
 // ── Fly to pin ───────────────────────────────────────────────────────────
 let activeSlotEl = null;
 function flyTo(pid, slotEl) {
@@ -520,6 +447,19 @@ function flyTo(pid, slotEl) {
 }
 
 // ── Render schedule ──────────────────────────────────────────────────────
+function toggleDetail(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const isOpen = el.classList.contains('open');
+  // Close all open detail panels
+  document.querySelectorAll('.slot-detail.open').forEach(d => d.classList.remove('open'));
+  document.querySelectorAll('.slot.detail-active').forEach(s => s.classList.remove('detail-active'));
+  // Open this one if it was closed
+  if (!isOpen) {
+    el.classList.add('open');
+    el.closest('.slot').classList.add('detail-active');
+  }
+}
 function badgeClass(city){return {tokyo:'b-tokyo',kyoto:'b-kyoto',osaka:'b-osaka',kobe:'b-kobe',hakone:'b-hakone',travel:'b-travel'}[city]||'b-travel';}
 function badgeLabel(city){return {tokyo:'Tokyo',kyoto:'Kyoto',osaka:'Osaka',kobe:'Kobe',hakone:'Hakone',travel:'Travel'}[city]||city;}
 function tagHtml(tags){
@@ -544,7 +484,16 @@ function render(){
       const sc=slotCounter++;
       const hasPid=!!s.pid&&!!PLACE_DATA[s.pid];
       const clickAttr=hasPid?`onclick="flyTo('${s.pid}',document.getElementById('sc${sc}'))"`:'' ;
-      return `<div class="slot${hasPid?' mappable':''}" id="sc${sc}" ${clickAttr}>
+      const detId = 'det-' + sc;
+      const hasDetail = !!s.detail;
+      const slotClick = hasPid && hasDetail
+        ? `onclick="flyTo('${s.pid}',this);toggleDetail('${detId}')"`
+        : hasPid
+          ? `onclick="flyTo('${s.pid}',this)"`
+          : hasDetail
+            ? `onclick="event.stopPropagation();toggleDetail('${detId}')"`
+            : '';
+      return `<div class="slot${hasPid?' mappable':''}${hasDetail?' has-detail':''}" id="sc${sc}" ${slotClick}>
   <span class="slot-time">${s.t}</span>
   <div class="dot d-${s.d}"></div>
   <div class="slot-body">
@@ -555,6 +504,7 @@ function render(){
       ${hasPid?'<span class="slot-pin">📍</span>':''}
     </div>
     ${s.note?`<div class="slot-note">${s.note}</div>`:''}
+    ${hasDetail?`<div class="slot-detail" id="${detId}">${s.detail}</div>`:''}
   </div>
 </div>`;
     }).join('');
@@ -592,7 +542,6 @@ function filter(city,btn){
 }
 
 render();
-buildDayBtns();
 setTimeout(()=>{
   const b=document.getElementById('body-0');
   const c=document.getElementById('chev-0');
