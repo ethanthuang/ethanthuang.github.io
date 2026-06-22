@@ -3,551 +3,497 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Japan Trip · Jun 28 – Jul 12</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<title>Japan · Jun 28 – Jul 12, 2026</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&display=swap');
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f7f6f3; color: #1a1a18; font-size: 14px; line-height: 1.5; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f7f6f3; color: #1a1a18; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  :root { --mapw: 50vw; }
+  .wrap { width: 100%; }
+  .layout { display: flex; align-items: flex-start; }
+  .main { flex: 1; min-width: 0; }
+  .map-panel { width: var(--mapw); flex-shrink: 0; position: sticky; top: 0; height: 100vh; border-left: 1px solid #e8e7e4; background: #fff; display: flex; flex-direction: column; overflow: hidden; }
+  @media (max-width: 880px){
+    .layout { flex-direction: column; }
+    .map-panel { width: 100% !important; height: 380px; position: relative; border-left: none; border-top: 1px solid #e8e7e4; }
+    .size-ctrl { display: none !important; }
+  }
 
-/* ── Top chrome ─────────────────────────────────────────── */
-.chrome { flex-shrink: 0; }
-.hero { position: relative; height: 130px; overflow: hidden; }
-.hero img { width: 100%; height: 100%; object-fit: cover; object-position: center 55%; display: block; }
-.hero-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(10,10,8,0.3) 0%, rgba(10,10,8,0.7) 100%); }
-.hero-text { position: absolute; bottom: 0; left: 0; right: 0; padding: 14px 20px 12px; }
-.hero-text h1 { color: #f7f6f3; font-size: 26px; font-weight: 400; font-family: 'Playfair Display', Georgia, serif; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
-.hero-text .hero-date { font-size: 11px; color: rgba(247,246,243,0.6); margin-top: 2px; letter-spacing: 0.4px; }
-.header { background: #1a1a18; padding: 8px 20px 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.total-pill { font-size: 10px; padding: 2px 8px; border-radius: 20px; background: #2e2e2c; color: #ccc; }
-.total-pill.green { background: #1a3320; color: #6dbd6d; }
-.top-bar { display: flex; align-items: center; gap: 6px; padding: 7px 16px; background: #fff; border-bottom: 1px solid #e8e7e4; }
-.f-btn { font-size: 11px; padding: 3px 10px; border-radius: 20px; border: 1px solid #ddd; background: transparent; cursor: pointer; color: #555; }
-.f-btn.active { background: #1a1a18; color: #fff; border-color: #1a1a18; }
-.top-bar-sep { flex: 1; }
-.map-toggle { font-size: 11px; padding: 3px 10px; border-radius: 20px; border: 1px solid #ddd; background: #fff; cursor: pointer; color: #555; }
-.map-toggle.on { background: #ddeeff; color: #1a5580; border-color: #aaccee; }
+  /* Header */
+  .header { background: #1a1a18; color: #f7f6f3; padding: 22px 24px 18px; }
+  .header h1 { font-size: 19px; font-weight: 600; letter-spacing: -0.4px; }
+  .pills { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 14px; }
+  .pill { font-size: 11px; padding: 3px 10px; border-radius: 20px; background: #2e2e2c; color: #ccc; letter-spacing: 0.2px; }
+  .pill.green { background: #16331f; color: #6dbd6d; }
+  .pill.dim { background: transparent; border: 1px solid #3a3a37; color: #888; }
 
-/* ── Main content area ──────────────────────────────────── */
-.main { display: flex; flex: 1; overflow: hidden; }
+  /* Filters */
+  .filters { display: flex; gap: 6px; padding: 11px 24px; background: #fff; border-bottom: 1px solid #e8e7e4; flex-wrap: wrap; position: sticky; top: 0; z-index: 5; }
+  .f-btn { font-size: 12px; padding: 4px 13px; border-radius: 20px; border: 1px solid #ddd; background: transparent; cursor: pointer; color: #555; transition: all 0.15s; display: inline-flex; align-items: center; gap: 5px; }
+  .f-btn:hover { border-color: #bbb; }
+  .f-btn.active { background: #1a1a18; color: #fff; border-color: #1a1a18; }
+  .f-dot { width: 7px; height: 7px; border-radius: 50%; }
 
-/* ── Schedule panel ─────────────────────────────────────── */
-.schedule { flex: 1; overflow-y: auto; padding: 10px 14px 20px; min-width: 0; }
+  /* Map panel */
+  .map-head { display: flex; align-items: center; gap: 9px; padding: 11px 14px; flex-wrap: wrap; border-bottom: 1px solid #f0eeea; flex-shrink: 0; }
+  .map-title { font-size: 13px; font-weight: 600; letter-spacing: -0.2px; }
+  .map-hint { font-size: 10.5px; color: #b0aea8; }
+  .map-right { margin-left: auto; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .size-ctrl { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #b0aea8; }
+  .size-ctrl input[type=range] { width: 92px; accent-color: #8b6fc9; cursor: pointer; }
+  .map-regions { display: flex; gap: 5px; flex-wrap: wrap; }
+  .r-btn { font-size: 11px; padding: 3px 10px; border-radius: 16px; border: 1px solid #ddd; background: transparent; cursor: pointer; color: #666; }
+  .r-btn:hover { border-color: #999; color: #222; }
+  #map { flex: 1; min-height: 0; width: 100%; background: #cddee8; }
+  .leaflet-popup-content { font-size: 12.5px; line-height: 1.5; }
+  .leaflet-popup-content a { color: #3a6ea5; }
 
-/* ── Map panel ──────────────────────────────────────────── */
-.map-panel { width: 420px; flex-shrink: 0; border-left: 1px solid #e8e7e4; display: flex; flex-direction: column; overflow: hidden; transition: width 0.25s ease; }
-.map-panel.hidden { width: 0; border-left: none; overflow: hidden; }
-.map-hint { padding: 8px 12px 6px; background: #faf9f7; border-bottom: 1px solid #f0eeea; flex-shrink: 0; }
-.map-hint #dayBtnBar::-webkit-scrollbar { display: none; }
-.day-route-btn.active-route { outline: 2px solid currentColor; font-weight: 600; }
-#map { flex: 1; min-height: 0; }
+  /* Days */
+  .days { padding: 14px 16px 60px; display: flex; flex-direction: column; gap: 9px; }
+  .day { background: #fff; border-radius: 11px; border: 1px solid #e8e7e4; overflow: hidden; }
+  .day.empty-by-filter { display: none; }
+  .day-head { display: flex; align-items: baseline; gap: 11px; padding: 13px 16px; cursor: pointer; user-select: none; }
+  .day-head:hover { background: #fafaf8; }
+  .day-date { font-size: 13px; font-weight: 600; letter-spacing: -0.2px; white-space: nowrap; }
+  .day-label { font-size: 12px; color: #8a8a86; flex: 1; }
+  .day-count { font-size: 11px; color: #b0b0ac; }
+  .chev { font-size: 10px; color: #c0c0bc; transition: transform 0.2s; }
+  .day.collapsed .chev { transform: rotate(-90deg); }
+  .day.collapsed .slots { display: none; }
 
-/* ── Day cards ──────────────────────────────────────────── */
-.day { background: #fff; border-radius: 10px; border: 1px solid #e8e7e4; overflow: visible; margin-bottom: 8px; }
-.day-hdr { display: flex; align-items: center; gap: 8px; padding: 9px 13px; cursor: pointer; user-select: none; }
-.day-hdr:hover { background: #faf9f7; }
-.city-badge { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
-.b-tokyo  { background: #ddeeff; color: #1a5580; }
-.b-kyoto  { background: #ede8fb; color: #4a3899; }
-.b-osaka  { background: #fde8e0; color: #8a3018; }
-.b-kobe   { background: #fce8f0; color: #7a2545; }
-.b-hakone { background: #e0f0e8; color: #1a5c35; }
-.b-travel { background: #ebebeb; color: #555; }
-.day-title { font-size: 13px; font-weight: 500; flex: 1; min-width: 0; }
-.day-right { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
-.day-cost { font-size: 10px; font-weight: 500; color: #2d7a2d; background: #e8f5e8; padding: 2px 6px; border-radius: 20px; }
-.day-date { font-size: 10px; color: #bbb; }
-.chev { font-size: 11px; color: #bbb; transition: transform 0.2s; }
-.chev.open { transform: rotate(180deg); }
-.day-body { display: none; padding: 9px 13px 11px; border-top: 1px solid #f0eeea; }
-.day-body.open { display: block; }
-.day-note { font-size: 11px; color: #777; background: #faf9f7; border-left: 2px solid #ddd; padding: 5px 8px; border-radius: 0 5px 5px 0; margin-bottom: 9px; line-height: 1.5; }
-.slots { display: flex; flex-direction: column; gap: 7px; }
-.slot { display: flex; gap: 8px; align-items: flex-start; }
-.slot.mappable { cursor: pointer; border-radius: 6px; padding: 3px 4px; margin: -3px -4px; }
-.slot.mappable:hover { background: #f0f7ff; }
-.slot.map-active { background: #ddeeff !important; }
-.slot-time { font-size: 10px; color: #aaa; min-width: 42px; padding-top: 3px; font-variant-numeric: tabular-nums; flex-shrink: 0; }
-.dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
-.d-eat    { background: #d85a30; }
-.d-drink  { background: #6b4fbb; }
-.d-do     { background: #1d9e75; }
-.d-shop   { background: #c07a10; }
-.d-bar    { background: #c44478; }
-.d-travel { background: #999; }
-.d-stay   { background: #3a8add; }
-.slot-body { flex: 1; min-width: 0; }
-.slot-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px; }
-.slot-text { font-size: 13px; color: #1a1a18; line-height: 1.4; }
-.slot-price { font-size: 10px; color: #888; white-space: nowrap; }
-.slot-pin { font-size: 9px; color: #1a5580; opacity: 0.5; }
-.tags { display: inline-flex; gap: 3px; flex-wrap: wrap; }
-.tag { font-size: 9px; padding: 1px 5px; border-radius: 10px; font-weight: 500; }
-.t-must  { background: #fde8e8; color: #9a2020; }
-.t-book  { background: #fef3e0; color: #8a5010; }
-.t-early { background: #e8f5e8; color: #2d7a2d; }
-.t-group { background: #ede8fb; color: #4a3899; }
-.slot-note { font-size: 11px; color: #888; margin-top: 1px; line-height: 1.4; }
-.legend { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 20px 0; background: #fff; border-bottom: 1px solid #e8e7e4; }
-.leg { display: flex; align-items: center; gap: 3px; font-size: 10px; color: #888; }
-.leg-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .slots { padding: 2px 0 10px; }
 
-/* Leaflet popup */
-.leaflet-popup-content-wrapper { border-radius: 10px; border: none; box-shadow: 0 4px 16px rgba(0,0,0,0.15); padding: 0; overflow: hidden; }
-.leaflet-popup-content { margin: 0; min-width: 180px; }
-.popup-inner { padding: 10px 13px; }
-.popup-city { font-size: 9px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: #aaa; margin-bottom: 2px; }
-.popup-name { font-size: 13px; font-weight: 500; color: #1a1a18; margin-bottom: 1px; }
-.popup-day { font-size: 10px; color: #999; margin-bottom: 7px; }
-.popup-maps { font-size: 10px; color: #1a5580; text-decoration: none; background: #ddeeff; padding: 3px 8px; border-radius: 5px; display: inline-block; }
-.leaflet-popup-tip-container { display: none; }
-  .slot.has-detail { cursor: pointer; }
-  .slot.has-detail:hover .slot-text { text-decoration: underline; text-decoration-color: #ccc; text-decoration-style: dotted; }
-  .slot.detail-active { background: #f7f6f3; border-radius: 6px; }
-  .slot-detail { font-size: 11px; color: #555; margin-top: 6px; line-height: 1.6; background: #faf9f7; border-radius: 6px; padding: 8px 10px; border-left: 2px solid #e0ddd8; display: none; }
+  /* Slot */
+  .slot { display: flex; gap: 11px; padding: 7px 18px 7px 16px; position: relative; --rowbg: #fff; }
+  .slot.hidden-by-filter { display: none; }
+  .slot.mappable { cursor: pointer; }
+  .slot.mappable:hover { background: #f0f7ff; --rowbg: #f0f7ff; }
+  .slot.map-active { background: #ddeeff; --rowbg: #ddeeff; }
+  .slot-time { font-size: 11.5px; color: #999; width: 52px; flex-shrink: 0; text-align: right; padding-top: 1px; font-variant-numeric: tabular-nums; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; position: relative; z-index: 1; box-shadow: 0 0 0 3px var(--rowbg); }
+  .slot::before { content: ''; position: absolute; left: 82px; top: 0; bottom: 0; width: 1px; background: #eceae6; z-index: 0; }
+  .slot:first-child::before { top: 8px; }
+  .slot:last-child::before { bottom: calc(100% - 14px); }
+
+  .d-travel  { background: #4a86c5; }
+  .d-hotel   { background: #8b6fc9; }
+  .d-food    { background: #d98a3d; }
+  .d-activity{ background: #4a9d5b; }
+  .d-shop    { background: #d2689a; }
+  .d-note    { background: #b6b4ae; }
+
+  .slot-body { flex: 1; min-width: 0; }
+  .slot-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .slot-text { font-size: 13.5px; color: #20201d; }
+  .slot-text a { color: #3a6ea5; text-decoration: none; border-bottom: 1px solid #c5d6e8; }
+  .slot-text a:hover { border-bottom-color: #3a6ea5; }
+  .slot-price { font-size: 11px; color: #b07a2a; background: #fbf3e4; padding: 1px 7px; border-radius: 5px; }
+  .slot-dur { font-size: 11px; color: #3a6ea5; background: #eaf1f8; padding: 1px 7px; border-radius: 5px; font-variant-numeric: tabular-nums; }
+  .slot-pin { font-size: 11px; opacity: 0.65; }
+  .tag { font-size: 10px; padding: 1px 7px; border-radius: 5px; letter-spacing: 0.2px; text-transform: uppercase; font-weight: 600; }
+  .tag-booked { background: #e7f3ea; color: #3c8651; }
+  .tag-tobook { background: #fbf0e0; color: #b8842f; }
+  .tag-plain  { background: #efeee9; color: #87857d; }
+
+  .slot-note { font-size: 12px; color: #8e8c85; margin-top: 2px; }
+  .slot-detail { font-size: 12px; color: #6f6d66; margin-top: 5px; padding: 8px 11px; background: #faf9f6; border-radius: 7px; border: 1px solid #efeee9; display: none; line-height: 1.55; }
   .slot-detail.open { display: block; }
-  .slot-detail b { color: #1a1a18; }
-  .slot-detail i { color: #777; }
+  .slot-detail a { color: #3a6ea5; }
+  .slot-detail .dl { display: flex; gap: 7px; margin-top: 2px; }
+  .slot-detail .dl b { color: #57554e; font-weight: 600; min-width: 64px; }
+  .det-toggle { margin-left: auto; flex-shrink: 0; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; border: none; background: transparent; color: #c2c0b9; cursor: pointer; font-size: 11px; border-radius: 6px; transition: transform .2s ease, color .15s, background .15s; }
+  .det-toggle:hover { color: #666; background: #efeee9; }
+  .det-toggle.open { transform: rotate(180deg); color: #8a887f; }
+
+  .empty-slot { font-size: 12.5px; color: #c2c0ba; font-style: italic; padding: 6px 18px 6px 16px; }
+  .footer { text-align: center; font-size: 11px; color: #b8b6b0; padding: 0 0 30px; }
 </style>
 </head>
 <body>
-
-<div class="chrome">
-  <div class="hero">
-    <img src="https://images.unsplash.com/photo-1513407030348-c983a97b98d8?w=1200&q=80" alt="Tokyo"/>
-    <div class="hero-overlay"></div>
-    <div class="hero-text">
-      <h1>Japan Trip</h1>
-      <div class="hero-date">Jun 28 – Jul 12, 2026</div>
+<div class="wrap">
+  <div class="header">
+    <h1>Japan · Jun 28 – Jul 12, 2026</h1>
+    <div class="pills">
+      <span class="pill">15 days</span>
+      <span class="pill dim">Tokyo · Kyoto · Osaka</span>
     </div>
   </div>
-  <div class="header">
-    <span class="total-pill">4 nights Tokyo</span>
-    <span class="total-pill">1 night Hakone</span>
-    <span class="total-pill">5 nights Kyoto</span>
-    <span class="total-pill">3 nights Osaka</span>
-    <span class="total-pill">Kobe + Katsuo-ji day trips</span>
-    <span class="total-pill green">~$1,300–1,800pp excl. flights &amp; accommodation</span>
-  </div>
-  <div class="legend">
-    <div class="leg"><div class="leg-dot d-eat"></div>Eat</div>
-    <div class="leg"><div class="leg-dot d-bar"></div>Bar</div>
-    <div class="leg"><div class="leg-dot d-drink"></div>Cafe</div>
-    <div class="leg"><div class="leg-dot d-do"></div>See &amp; Do</div>
-    <div class="leg"><div class="leg-dot d-shop"></div>Shop</div>
-    <div class="leg"><div class="leg-dot d-travel"></div>Travel</div>
-    <div style="margin-left:auto;font-size:10px;color:#bbb">📍 = click to see on map &nbsp; 💴 = per person</div>
-  </div>
-  <div class="top-bar">
-    <button class="f-btn active" onclick="filter('all',this)">All</button>
-    <button class="f-btn" onclick="filter('tokyo',this)">Tokyo</button>
-    <button class="f-btn" onclick="filter('kyoto',this)">Kyoto</button>
-    <button class="f-btn" onclick="filter('osaka',this)">Osaka</button>
-    <div class="top-bar-sep"></div>
-    <button class="map-toggle on" id="mapToggleBtn" onclick="toggleMap()">🗺 Map</button>
-  </div>
-</div>
 
-<div class="main">
-  <div class="schedule" id="days"></div>
-  <div class="map-panel" id="mapPanel">
-    <div class="map-hint">Click a <span style="color:#1a5580">📍 pinned slot</span> in the schedule to fly here</div>
-    <div id="map"></div>
+  <div class="layout">
+    <div class="main">
+      <div class="filters" id="filters"></div>
+      <div class="days" id="days"></div>
+    </div>
+
+    <div class="map-panel" id="mapcard">
+      <div class="map-head">
+        <span class="map-title">Map</span>
+        <span class="map-hint">click 📍 to fly here</span>
+        <div class="map-right">
+          <label class="size-ctrl" title="Resize map">↔ <input type="range" min="25" max="70" value="50" oninput="setMapW(this.value)"></label>
+          <div class="map-regions">
+            <button class="r-btn" onclick="flyTo('tokyo')">Tokyo</button>
+            <button class="r-btn" onclick="flyTo('kyoto')">Kyoto</button>
+            <button class="r-btn" onclick="flyTo('osaka')">Osaka</button>
+            <button class="r-btn" onclick="flyTo('taipei')">Taipei</button>
+          </div>
+        </div>
+      </div>
+      <div id="map"></div>
+    </div>
   </div>
 </div>
 
 <script>
-const D = [
+/* ---------- DATA ----------
+   slot: { t, d, text, note?, detail?, price?, tags?, q?, pid?, ll:[lat,lng]?, region? } */
+const DAYS = [
   {
-    date:"Jun 28 (Sun)", city:"travel", label:"Day 0 · Travel", est:null,
-    note:"Japan-specific eSIM recommended over generic Airalo (~$15-20). Pack light.",
-    slots:[
-      {t:"7:00am", d:"travel", text:"DL 1598 · SFO → LAX", note:"Departs T1 · Arrives T3 · 8:30am"},
-      {t:"10:20am",d:"travel", text:"DL 0007 · LAX → HND", note:"Departs T3 · Arrives 2:00pm +1 day"},
+    date: "Sun · Jun 28", label: "Travel · SFO",
+    slots: [
+      { t: "7:00a", d: "travel", text: "Edward &amp; Ethan leave SFO" },
     ]
   },
   {
-    date:"Jun 29 (Mon)", city:"tokyo", label:"Day 1 · Arrive Tokyo", est:"~$40-60",
-    note:"Arrive jet-lagged. Easy first evening — enjoy the Park Hyatt. No agenda.",
-    slots:[
-      {t:"2:00pm", d:"travel", text:"Land HND → Shinjuku via Keikyu + transfer", price:"~$5-8", note:"Get Suica/Pasmo IC card at airport — loads to Apple/Google Wallet"},
-      {t:"3:30pm", d:"stay",   pid:"ChIJJ7La1yzzGGARln2OypSj2Cw", detail:`<b>Floors 39–52, Shinjuku Park Tower.</b> Just completed a full 19-month renovation (reopened Dec 2025) — rooms are fresh but the soul is intact. Elevator opens on the 41st floor into a sun-drenched atrium with floor-to-ceiling views. Staff will likely escort you from the taxi door. New York Bar on the 52nd floor is the Lost in Translation bar — go for a drink even if you're not eating. Kozue does Japanese kaiseki; Girandole by Alain Ducasse handles French. Pool and spa on the 47th floor, free for guests. <b>Tip:</b> ask for a Mt. Fuji-facing room — on clear mornings you can see it from bed.`, text:"Check in: Park Hyatt Tokyo (Shinjuku)", note:"Lost in Translation hotel — 52nd floor lobby. Budget $500-800/night."},
-      {t:"6:00pm", d:"do",     pid:"ChIJP9eKBdeMGGAR0zzBXJNVj5A", detail:`<b>Memory Lane</b> — a tight alley of ~20 yakitori stalls behind Shinjuku station's west exit, running since the 1940s. Smoke fills the air, charcoal grills line the counters, salarymen crowd every stool. Go for yakitori skewers and cold Sapporo. Most stalls seat 6–8 people max; just point at what you want. <b>Cash only</b> at most stalls. Best after 7pm when the smoke and atmosphere peak. Some stalls have cover charges (~¥300) — fine to ask before sitting. No English menus but that's part of it.`, text:"Shinjuku wander — Omoide Yokocho (Memory Lane)", price:"free", note:"No plan needed — just explore"},
-      {t:"7:30pm", d:"eat",    text:"Local Shinjuku izakaya — easy, no reservation", price:"~$20-30"},
+    date: "Mon · Jun 29", label: "Tokyo",
+    slots: [
+      { t: "2:00p", d: "travel", text: "Arrive HND", note: "Edward &amp; Ethan" },
+      { t: "", d: "travel", text: "Transit to hotel", note: "~30–40 min" },
+      { t: "3:00p", d: "hotel",
+        text: 'Check in: <a href="https://www.agoda.com/keio-presso-inn-tokyo-station-yaesu/hotel/tokyo-jp.html" target="_blank" rel="noopener">Keio Presso Inn Tokyo Station Yaesu</a>',
+        pid: "ChIJK6WR1OKLGGARFPxFNRLWHs4", ll: [35.678869, 139.7699532], region: "tokyo",
+        detail: '<div class="dl"><b>Check-in</b> Mon Jun 29 · 3:00 PM</div><div class="dl"><b>Checkout</b> Tue Jun 30 · 11:00 AM</div>'
+      },
+      { t: "6:30p", d: "food", text: "Azukitokōri", note: "Kakigori (shaved ice) · Yoyogi · party of 2",
+        pid: "ChIJCe1V8OuNGGARE3lVS7YJ0G8", ll: [35.6822614, 139.6972058], region: "tokyo",
+        detail: '<div class="dl"><b>Order</b> 2 × shaved ice · ¥6,000 refundable deposit</div><div class="dl"><b>Pay</b> TableCheck Pay · card ··4572</div><div class="dl"><b>Res&nbsp;ID</b> J5JXH5</div><div class="dl"><b>Confirm</b> <a href="https://drive.google.com/file/d/1vHpzhoxCgH-IJnOoAWkzIlr7GQWYJ1Zf/view" target="_blank" rel="noopener">PDF ↗</a></div>' },
     ]
   },
   {
-    date:"Jun 30 (Tue)", city:"tokyo", label:"Day 2 · Tokyo", est:"~$70-100",
-    note:"Sleep in, enjoy the hotel. Out by late morning. Three things only — omakase, soft serve, Hikiniku.",
-    slots:[
-      {t:"11:00am",d:"drink", detail:`Two good options near the Park Hyatt area. <b>Hatoya Matcha</b> (Shinjuku) does a precise bowl of ceremonial matcha with a small wagashi sweet — traditional, quiet, short queue. <b>Wasachi</b> is slightly more modern, good for a matcha latte or thick koicha. Either works as a gentle start before the omakase. Order koicha (thick) if you want the full experience.`, text:"Hatoya Matcha or Wasachi — first matcha of the trip", price:"~$6-10"},
-      {t:"12:00pm",d:"eat",   pid:"ChIJWdhcBWCLGGARxuyISzMZfGU", detail:`<b>Minami-Aoyama, B1F Maison Blanche.</b> Counter seats only (~10 seats). The chef speaks enough English to guide you through. Lunch omakase runs ~10 courses for ¥3,000–4,000 — one of the best value omakase in Tokyo. Expect tuna belly, sea urchin if in season, warm egg rice as a finisher. <b>Book via OpenTable or call directly</b> — lunch sittings are noon only. Saturday dinner only (no Saturday lunch). Closed Sundays. <b>Card accepted.</b>`, text:"Lunch omakase — Sushi Kidoguchi", price:"~$20-25", tags:["book"], note:"Ten-course lunch omakase ~$20. Book ahead — noon sitting."},
-      {t:"3:00pm", d:"do",    pid:"ChIJlVne8bqMGGARtX5O6ojMvsI", detail:`<b>Takeshita Street</b> (Harajuku) is the youth fashion chaos — crepe stalls, vintage, cosplay, everything loud and cheap. <b>Omotesando</b> (10 min walk south) is the polar opposite — wide tree-lined boulevard with flagship stores, architectural buildings, and good people-watching. <b>Cat Street</b> runs between them and has the best independent boutiques. Daikanyama is a further 15 min walk south — quieter, more residential, excellent for coffee and independent fashion.`, text:"Harajuku / Omotesando walk — Takeshita Street, people-watching", price:"free", note:"Easy stroll; no agenda. Daikanyama is a short walk south."},
-      {t:"5:00pm", d:"eat",   pid:"ChIJvaN4mziLGGAR6t4CkHY0hCw", detail:`<b>Spin-off of Michelin-starred Tacubo</b> restaurant. Tiny shop with a few outdoor seats. Known for impeccably balanced pastries — custard cream puff, financier, madeleine — and their signature soft serve. The soft serve changes seasonally. Expect ¥600–800 per item. Easy to miss; look for the minimal signage. <b>Closed Wednesdays.</b> Opens 11am, closes when sold out (usually by 5pm). Daikanyama Tsutaya Books is a 5 min walk — one of the best bookshops in Japan.`, text:"Dolce Tacubo (Daikanyama) — soft serve", price:"~$8-12", tags:["must"], note:"Open until 7pm"},
-      {t:"7:00pm", d:"eat",   pid:"ChIJsWJ80PiNGGAR8aSF8OFJeu4", detail:`<b>No sign on the door — look for "1129."</b> All counter seating; open kitchen so you watch everything. Each person books one slot on TableCheck — book multiple people simultaneously by each reserving individually for the same time. The beef patty arrives in stages: first rare, then medium, then well — you eat each round. No condiments needed. Full set: 3 patties + unlimited rice. <b>¥1,000 advance fee per person</b> via TableCheck on top of the food cost (~¥2,500). <b>Closed Wednesdays.</b>`, text:"Hikiniku to Come — Hamburg steak", price:"~$25-35", tags:["must","book"], note:"Book 1 person per slot at same time. ~$6pp fee — opens Jun 1"},
+    date: "Tue · Jun 30", label: "Tokyo → Kyoto",
+    slots: [
+      { t: "", d: "travel", text: "🚄 Shinkansen: Tokyo → Kyoto", dur: "~2h15m", note: "Tokyo Station → Kyoto Station · Nozomi (fastest)" },
+      { t: "3:00p", d: "hotel",
+        text: "Check in: Park Hyatt Kyoto",
+        pid: "ChIJY1o_4kcJAWARy0VPcxQbz94", ll: [34.9991121, 135.7811268], region: "kyoto",
+        detail: '<div class="dl"><b>Check-in</b> Tue Jun 30 · 3:00 PM</div><div class="dl"><b>Checkout</b> Wed Jul 1 · 12:00 PM</div>'
+      },
     ]
   },
   {
-    date:"Jul 1 (Wed)", city:"tokyo", label:"Day 3 · Tokyo → Hakone", est:"~$50-70 + ryokan",
-    note:"Morning shopping, then Romancecar to Hakone. Be at Shinjuku station comfortably by 1:15pm.",
-    slots:[
-      {t:"10:00am",d:"shop",  pid:"ChIJLT73m3eLGGARdRlWxF-2SnU", detail:`<b>Onitsuka Tiger Ginza</b> (6-5-6 Ginza) is the only store offering on-site <b>custom embroidery</b> — you pick a shoe and have a design embroidered while you wait. Budget 45–60 min for the embroidery process. Staff can get overwhelmed; arrive before 11am for best service. <b>Skincare:</b> hit Matsumoto Kiyoshi or Sundrug in Ginza for Japanese pharmacy staples — Hada Labo, Shiseido, Kose at 20–30% cheaper than abroad. Tax-free on purchases over ¥5,000 with your passport.`, text:"Ginza / Omotesando — Onitsuka Tiger, skincare & beauty", price:"varies", note:"Leave Ginza by 12:30pm — allows time to walk to Shinjuku or grab a train"},
-      {t:"12:30pm",d:"eat",   text:"Quick lunch near Shinjuku station", price:"~$10-15"},
-      {t:"1:30pm", d:"travel",pid:"ChIJl0TCagKNGGAR9pSy4NY5l94", detail:`<b>Odakyu Romancecar</b> — reserved seating express, ~85 min, no transfers. Book on the <b>Odakyu website or app</b> in advance (~¥1,270 + ¥1,000 Romancecar surcharge). Departs from Shinjuku Station's Odakyu line platforms (west side). Window seats get mountain views. Some services have a café car. Arrives Hakone-Yumoto — from there, take the Hakone Tozan Railway up to your ryokan or the bus network. Get the <b>Hakone Free Pass</b> at Shinjuku station — covers all local transport including ropeway.`, text:"Shinjuku → Hakone-Yumoto (Odakyu Romancecar, ~85 min)", price:"~$25", note:"Reserved scenic seating — book ahead on Odakyu site"},
-      {t:"3:30pm", d:"stay",  pid:"ChIJhfCwMAaiGWARW2IZmApNjZU", detail:`<b>Hakone Kowakien Ten-Yu</b> (Ninotaira area). Private onsen rooms — each has its own indoor/outdoor bath fed by natural hot spring water. Check-in 3pm, but onsen available from arrival. Kaiseki dinner served in your room or private dining room — 10+ courses, seasonal ingredients, sake pairing available. Breakfast included (Japanese style). <b>Dress code:</b> yukata provided; wear it to dinner and communal areas. <b>Tip:</b> book the open-air terrace onsen room if available — stargazing from the bath in July.`, text:"Check in: Ten-Yu Hakone (ryokan)", note:"Private onsen, kaiseki included. Budget ~$300-500pp/night."},
-      {t:"5:00pm", d:"do",    detail:`Change into your <b>yukata</b> as soon as you arrive — it's the signal to shift pace. Most Ten-Yu rooms have a private indoor/outdoor onsen; soak before dinner. Etiquette: rinse thoroughly at the shower station before entering the bath, no swimwear. Water temperature ~42°C (107°F) — start short (10 min), exit, cool down, re-enter. The minerals in Hakone's waters (sulfurous/sodium chloride mix) leave skin noticeably soft.`, text:"Ryokan onsen — decompress", price:"included"},
-      {t:"7:00pm", d:"eat",   detail:`Typically 8–12 courses: <i>sakizuke</i> (amuse), <i>hassun</i> (seasonal platter), sashimi, simmered dish, grilled fish, meat course, rice + miso, dessert. Eat in sequence — don't rush. Sake pairing is excellent here; order by the 180ml <i>tokkuri</i> flask. If anything is unclear, staff will explain. Leave the lacquerware lids beside the bowl, not on top, when eating.`, text:"Kaiseki dinner at Ten-Yu (included)", price:"included", note:"Multi-course — take your time"},
+    date: "Wed · Jul 1", label: "Kyoto",
+    slots: [
+      { t: "2:00p", d: "hotel",
+        text: "Check in: Sakura Terrace —Adult Only—",
+        note: "1-1 Karasuma-cho, Higashi-kujo, Minami-ku, Kyoto 601-8016",
+        pid: "ChIJJVGF2VIPAWARq3tLCzPqHdE", ll: [34.979759, 135.759492], region: "kyoto",
+        detail: '<div class="dl"><b>Check-in</b> Wed Jul 1 · 2:00 PM</div><div class="dl"><b>Checkout</b> Thu Jul 2 · 11:00 AM</div>'
+      },
     ]
   },
   {
-    date:"Jul 2 (Thu)", city:"hakone", label:"Day 4 · Hakone → Kyoto", est:"~$40-60 + transport",
-    note:"Relaxed Hakone morning loop, then Shinkansen straight to Kyoto from Odawara.",
-    slots:[
-      {t:"7:30am", d:"eat",   text:"Ryokan breakfast (included)", price:"included"},
-      {t:"8:30am", d:"do",    pid:"ChIJoT-oK-mYGWARy-ItUPA6ekk", detail:`<b>Go clockwise:</b> bus from ryokan → Togendai → pirate ship across Lake Ashi (30 min, views of Mt. Fuji on clear days) → Hakone-en → ropeway up to Owakudani (sulphurous volcanic valley, black eggs, fumaroles) → ropeway down to Gora → Hakone Tozan train back. <b>Hakone Free Pass</b> covers all of this. Owakudani <i>kuro-tamago</i> (black eggs boiled in sulphur springs, said to add 7 years to your life) — ¥600 for 5 eggs. <b>Mt. Fuji visibility:</b> July morning = best chance; by afternoon clouds usually obscure it.`, text:"Hakone loop — Lake Ashi pirate ship + Owakudani ropeway", price:"~$20-30", note:"Hakone Free Pass (~$25) covers everything. No need to rush — do what appeals."},
-      {t:"12:30pm",d:"eat",   detail:`<b>Hakone-Yumoto:</b> small resort town, soba shops everywhere — try <i>Hakone Yumoto Soba</i> near the station. <b>Odawara</b> (20 min by local train): much larger, better variety. Odawara is a castle town — <i>kamaboko</i> (fish cake) is the local specialty, sold at shops near the station. The station depachika has solid bento options for the train. <b>Shinkansen:</b> Odawara is on the Tokaido Shinkansen — Hikari to Kyoto takes ~2hrs. Buy on Ekinet or use JR Pass.`, text:"Lunch in Hakone-Yumoto or Odawara", price:"~$12-18", note:"Head to Odawara after lunch (~20 min by local train)"},
-      {t:"2:30pm", d:"travel",text:"Odawara → Kyoto via Shinkansen (Hikari, ~2h)", price:"~$80 or JR Pass"},
-      {t:"5:00pm", d:"stay",  pid:"ChIJv8RJ2o8IAWARvb9D_eZ-Abw", detail:`<b>Osakaza-cho, Nakagyo Ward</b> — quiet side street off Sanjo, 5 min walk to Nishiki Market. Modern boutique with traditional Japanese materials — hinoki wood soaking tub in every room, in-room washer/dryer. Free sake and soft drinks in the lobby from 5pm. Staff speak excellent English and will help with restaurant bookings. <b>Tax-free shopping assistance</b> available at front desk. Luggage storage available if arriving before check-in.`, text:"Check in: Nol Kyoto Sanjo"},
-      {t:"7:00pm", d:"do",    pid:"ChIJT8uMzZwIAWARnGzsARCjnrY", detail:`<b>"Kyoto's Kitchen"</b> — 400-year-old covered market, 390m long, ~100 shops. Best before 5pm; some stalls close early. <b>What to try:</b> dashi-maki tamago (egg roll), fresh yuba (tofu skin), pickled vegetables, nama-fu (wheat gluten sweets), grilled skewers. <b>For matcha:</b> taste before buying — ask for a sample. Ippodo (nearby, separate) is better for serious matcha purchases. Nishiki is good for gift tins and ceremonial sets. <b>Crowded on weekends</b> — move assertively.`, text:"Nishiki Market — samples, buy matcha", price:"free + ~$5-10", tags:["must"], note:"Taste before buying; go before closing"},
-      {t:"8:30pm", d:"eat",   pid:"ChIJP2DblBgJAWARAgLlF0vWT6o", detail:`<b>Pontocho</b> is a narrow alley running parallel to the Kamo River — one of Kyoto's most atmospheric streets. Lit by lanterns at night, lined with traditional machiya townhouses converted to restaurants. In summer, many restaurants open <b>kawayuka</b> (riverside terraces over the river) — worth specifically requesting a terrace table. Walk the alley first; peek at menus outside before committing. Price range varies widely — mid-range izakayas are excellent. Avoid places with plastic food displays in the window.`, text:"Light dinner — Pontocho izakaya", price:"~$20-35"},
+    date: "Thu · Jul 2", label: "Kyoto",
+    slots: [
+      { t: "", d: "travel", text: "🚆 Kyoto → Ōgoto Onsen", dur: "~20m", note: "JR Kosei Line to Ōgoto-onsen Stn, then free hotel shuttle" },
+      { t: "3:00p", d: "hotel",
+        text: "Check in: Yuzanso",
+        note: "Ogoto Onsen, Otsu (just east of Kyoto)",
+        pid: "ChIJbecGYMYKAWARCTmAUo8BBIw", ll: [35.0910149, 135.8921966], region: "kyoto",
+        detail: '<div class="dl"><b>Check-in</b> Thu Jul 2 · 3:00 PM (by 7:00 PM)</div><div class="dl"><b>Checkout</b> Fri Jul 3 · 10:00 AM</div>'
+      },
     ]
   },
   {
-    date:"Jul 3 (Fri)", city:"kyoto", label:"Day 5 · Kyoto · Fushimi + Higashiyama", est:"~$40-70",
-    note:"Dawn temples while it's cool, then slow down. Free from 3pm — wander or rest.",
-    slots:[
-      {t:"5:30am", d:"do",    pid:"ChIJIW0uPRUPAWAR6eI6dRzKGns", detail:`<b>Free, open 24 hours.</b> The famous thousand torii gates climb 4km up Mt. Inari. At 5:30am you'll have the lower gates (the photogenic part) almost completely to yourself. The full hike to the summit takes 2–3 hours; in July heat skip the top and turn back at <i>Yotsutsuji</i> intersection (~45 min up) where you get the best city views. <b>Inari foxes</b> (<i>kitsune</i>) are everywhere — they're the shrine's messengers. The main shrine building at the base is the best-preserved; take your time there before the crowds hit.`, text:"Fushimi Inari Taisha — before sunrise", price:"free", tags:["early","must"], note:"Lower torii gates crowd-free; back by 8am before the heat builds"},
-      {t:"7:30am", d:"drink", pid:"ChIJ7V6ukxUPAWAR1z7SkqVGAA0", detail:`<b>5-31 Fukakusa Kaidoguchi-cho</b> — just outside the shrine entrance. Australian-style specialty coffee in a wooden building with a pond terrace. Flat whites are excellent. Also does breakfast: avocado toast, egg dishes, yogurt bowls. Opens 8:30am. <b>Gets busy from 9am</b> as the shrine crowds build — ideal to stop here right after your dawn visit. Outdoor terrace seating overlooks a small garden. The banana bread and cheese toast are both standouts.`, text:"Vermillion Cafe (near Fushimi Inari)", price:"~$6-9", tags:["must"]},
-      {t:"9:30am", d:"do",    pid:"ChIJB_vchdMIAWARujTEUIZlr2I", detail:`<b>Walk south to north:</b> start at Kiyomizu-dera (¥500 entry, opens 6am — you'll catch it early), walk down Sannenzaka and Ninenzaka (beautiful preserved stone-paved lanes, good souvenir shops — avoid tourist trap matcha soft serve here, it's overpriced), continue to Yasaka Pagoda (exterior only, iconic photo spot), then Gion. <b>Kiyomizu-dera</b> is built on a wooden platform overlooking the city — the veranda view is the main event. Don't miss the <i>Otowa waterfall</i> at the base — three streams for longevity, love, and success.`, text:"Higashiyama walk — Yasaka Pagoda, Sannenzaka, Kiyomizu-dera", price:"free-$5", note:"Take it slow — one of Kyoto's best walks"},
-      {t:"12:30pm",d:"eat",   text:"Lunch — Yasaihori or local Kyoto spot", price:"~$15-25"},
-      {t:"3:30pm", d:"shop",  pid:"ChIJcadqE4wIAWAR2BeU0_UOXtE", detail:`<b>52 Tokiwagi-cho, Nakagyo Ward</b> — in business since 1717. The shop sells matcha, gyokuro, sencha, and hojicha. Staff speak English and will ask about your use (drinking vs cooking, preferred bitterness level) to guide you. <b>Limit: 2 tins of matcha per person.</b> Ask for <i>Kitano-no-mukashi</i> (their best ceremonial grade, usually in stock) or <i>Unkaku</i> for a step below. The in-store café lets you try before buying — koicha and usucha with a wagashi sweet. <b>Closed Wednesdays.</b> Get there early — sells out by afternoon.`, text:"Ippodo Tea — buy matcha to take home", price:"~$10-35", tags:["must"], note:"Staff help you choose the right grade. Right in central Kyoto."},
-      {t:"7:00pm", d:"eat",   pid:"ChIJP2DblBgJAWARAgLlF0vWT6o", detail:`<b>Ginjo-Ramen Kubota:</b> Kyoto-style ramen — lighter, cleaner chicken or dashi broth vs. Tokyo tonkotsu. Look for the kotteri (rich) or assari (light) options. Queue forms before opening. <b>Pontocho alternative:</b> walk the alley, pick an izakaya with a kawayuka terrace — ask "kawayuka wa arimasu ka?" (do you have riverside seating?). July is the peak kawayuka season. Order a flight of local Kyoto sake (<i>fushimi</i> style — soft, slightly sweet) to pair with small plates.`, text:"Dinner — Ginjo-Ramen Kubota or Pontocho izakaya", price:"~$15-30"},
+    date: "Fri · Jul 3", label: "Kyoto → Osaka",
+    slots: [
+      { t: "", d: "travel", text: "🚆 Ōgoto Onsen → Osaka", dur: "~1h", note: "JR Kosei Line via Kyoto, then JR/subway into Chūō-ku" },
+      { t: "4:00p", d: "hotel",
+        text: "Check in: Airbnb · Chūō-ku",
+        note: "3-chōme-7-6 Kawaramachi, Chūō-ku, Osaka 542-0066",
+        q: "3-7-6 Kawaramachi Chuo-ku Osaka", ll: [34.6788, 135.5128], region: "osaka",
+        detail: '<div class="dl"><b>Check-in</b> Fri Jul 3 · 4:00 PM</div><div class="dl"><b>Checkout</b> Mon Jul 6 · 10:00 AM</div>'
+      },
     ]
   },
   {
-    date:"Jul 4 (Sat)", city:"kyoto", label:"Day 6 · Kyoto · Austin arrives 🎉", est:"~$130-180",
-    note:"Easy day — two temples, afternoon free. Austin arrives evening. Kaiseki together tonight.",
-    slots:[
-      {t:"9:30am", d:"do",    pid:"ChIJvUbrwCCoAWARX2QiHCsn5A4", detail:`<b>¥500 entry (cash or card).</b> Opens 9am — go early, it gets extremely crowded by 10am. The pavilion is a 14th-century Zen temple covered in gold leaf, reflected in Kyokochi pond. <b>You cannot enter the building</b> — it's a viewing experience from the garden path. The circuit takes 20–30 min. Photography is unrestricted. <b>Tip:</b> the best reflection shot is from the first viewpoint right after the entrance — don't rush past it. Skip the matcha stall inside; overpriced.`, text:"Kinkaku-ji (Golden Pavilion)", price:"~$3", note:"Go early — gets crowded by 10am"},
-      {t:"11:00am",d:"do",    pid:"ChIJ3asJPSqoAWARaecNxjPnh8s", detail:`<b>¥600 entry.</b> The most famous karesansui (dry landscape) rock garden in Japan — 15 rocks arranged in white gravel, only 14 visible from any single viewpoint. There's no "correct" interpretation; the garden is designed for meditation, not explanation. <b>Sit on the wooden veranda</b> and just look. Most tourists spend 5 minutes and leave — sit for longer and the crowd thins. The adjacent Kyoyochi pond garden is larger and also beautiful. JR bus from Kyoto Station is the easiest access.`, text:"Ryoanji rock garden — sit for 20 min", price:"~$4"},
-      {t:"12:30pm",d:"eat",   text:"Lunch — omurice or local Kyoto spot", price:"~$12-18"},
-      {t:"3:00pm", d:"do",    pid:"ChIJh8ezaNwJAWARmKlGTSmqPJc", detail:`<b>Shirakawa</b> is a narrow stone-paved canal lined with weeping willows and traditional ochaya (teahouse) buildings — the most atmospheric 200m in Kyoto, especially at dusk. <b>Hanamikoji Street</b> runs south from Shijo-dori — the main geisha district artery. You may spot <i>maiko</i> (apprentice geisha) walking to appointments in the early evening. <b>Photography rules:</b> no photographing geisha or maiko on the street in Gion — enforced with ¥10,000 fines. The best area to wander is the small streets east of Hanamikoji.`, text:"Gion wander — Shirakawa canal, side streets", price:"free", note:"No photographing geisha/maiko — fines apply"},
-      {t:"~7:45pm",d:"travel",text:"Austin arrives — ITM ~7pm → train to Kyoto ~45 min", price:"~$10", note:"Or NRT → Shinkansen → Kyoto (~$75); buy in advance"},
-      {t:"9:00pm", d:"eat",   pid:"ChIJdapH2MEIAWAR4M8GwwL-axs", detail:`<b>95-4 Sueyoshi-cho, Higashiyama</b> — Michelin-starred kappo (counter kaiseki). 50+ years in operation. Chef prepares in front of you at the counter. Lunch from ¥11,000pp, dinner ¥20,000–30,000pp. <b>Book weeks ahead</b> via Tableall, Tablecheck, or through your hotel concierge. English-speaking staff available. Courses: 8–10 dishes highlighting seasonal Kyoto ingredients — <i>hamo</i> (pike conger, a summer specialty), yuba, local vegetables. Sake pairing recommended. <b>Confirm late seating when booking</b> given Austin's arrival time.`, text:"Kaiseki — Kappo Hassun (all three)", price:"~$80-150", tags:["must","book"], note:"Book weeks ahead. Austin goes straight from station — confirm late seating when booking."},
+    date: "Sat · Jul 4", label: "Osaka · Austin arrives",
+    slots: [
+      { t: "2:10p", d: "travel", text: "Austin arrives at NRT! ✈️" },
+      { t: "2:30p", d: "travel", text: "Customs → ship suitcase to Chiba → re-enter", note: "~2:30–6:00 PM at Narita" },
+      { t: "7:00p", d: "travel", text: "Austin: NRT → KIX ✈️", dur: "1h50m", note: "7:00 → 8:50 PM" },
+      { t: "9:30p", d: "travel", text: "KIX → Airbnb", dur: "~1h", note: "9:30 → 10:30 PM" },
+      { t: "10:30p", d: "food", text: "Austin meets up with the group 🎉", note: "~10:30–11:00 PM" },
     ]
   },
   {
-    date:"Jul 5 (Sun)", city:"kyoto", label:"Day 7 · Kyoto · Kibune + Uji", est:"~$80-120",
-    note:"Kibune for morning + river lunch, Uji for matcha afternoon. Allow the full 1.5hr transit between — not a quick hop.",
-    slots:[
-      {t:"8:30am", d:"travel",text:"Kyoto → Kibune (Eizan Line to Kibuneguchi, ~45 min)", price:"~$4 each way"},
-      {t:"9:30am", d:"do",    pid:"ChIJCZEK8wimAWARi1RkteQaAh0", detail:`<b>Kifune Shrine</b> — a series of three shrines connected by a forested riverside path. The main shrine at the bottom has the famous stone lantern staircase. The <b>water fortune</b> (<i>mizu omikuji</i>) is unique: a blank slip of paper becomes readable when placed in the water — popular, ¥200. Walk uphill past the kawadoko restaurants to the upper shrines (Yui-no-Yashiro, Okunomiya) — the forest gets quieter and more dramatic. Temperature is noticeably cooler than Kyoto city — bring a light layer even in July.`, text:"Kibune shrine + river path walk", price:"free", note:"Small, beautiful village. ~45 min is plenty."},
-      {t:"11:30am",d:"eat",   pid:"ChIJqcbJieKlAWARjbvKL96apfQ", detail:`<b>Hirobun</b> (87 Kuramakibune-cho) — the best-known kawadoko restaurant in Kibune. In summer they serve <b>nagashi somen</b>: noodles sent down a bamboo flume with flowing water; you catch them with chopsticks. You sit on a wooden platform literally over the river. Opens 11am; arrive before 9:30am to be first in line — waits of 1.5–2.5hrs are common. The meal itself is ~45 min. <b>Closed Wednesdays.</b> <b>Book ahead</b> for the kawadoko full course (the sit-down dinner version) — for lunch the nagashi somen is walk-in queuing only. <b>Price:</b> nagashi somen set ~¥4,000pp.`, text:"Kawadoko river dining — lunch on platform over the river", price:"~$40-70", tags:["must","book","group"], note:"July-only. Book ahead — Hirobun or Kibune Yoshinoya. Allow 1.5-2hrs for the meal."},
-      {t:"2:00pm", d:"travel",text:"Kibune → Uji (Demachiyanagi → Kyoto → Uji, ~1.5hrs)", price:"~$6-8", note:"Build in the full time — no shortcut"},
-      {t:"3:30pm", d:"drink", pid:"ChIJsY2yLgkRAWARRxd0gBbV7XI", detail:`<b>Ichiban-10 Uji</b> — founded 1854, the most famous matcha teahouse in Uji. Opens 10am. <b>Queue system:</b> take a number ticket and come back — check your place in line via QR code on your phone. Wait times: 1.5–2hrs on weekends, 45–90 min weekdays. <b>What to order:</b> the matcha parfait (served in bamboo, with strawberry and whipped cream) is the signature dish. Also: matcha soba set, thick ceremonial matcha with wagashi sweet. The garden outside is beautiful — good for photos while waiting. <b>Matcha to buy:</b> they sell their own grade tins — worth picking up a tin to take home, different from Ippodo.`, text:"Nakamura Tokichi Honten — matcha teahouse", price:"~$15-25", tags:["must","group"], note:"Arrive by 3:30pm — stops seating 4-5pm in summer"},
-      {t:"5:30pm", d:"travel",text:"Uji → Kyoto (~25 min)", price:"~$3"},
-      {t:"7:00pm", d:"eat",   text:"Dinner in Kyoto — light izakaya", price:"~$20-35"},
+    date: "Sun · Jul 5", label: "Osaka",
+    slots: [
+      { t: "", d: "note", text: "Two options for the day", note: "pick one — Katsuō-ji works well before Austin's here" },
+      { t: "", d: "activity", text: "Option 1 · Katsuō-ji (Daruma temple)", note: "~1h15m each way by train · Minoo",
+        pid: "ChIJtX8053n5AGARND16wXHGXg0", ll: [34.8657752, 135.491087], region: "osaka" },
+      { t: "", d: "activity", text: "Option 2 · Nakazakichō → Umeda → Namba / Orange St", note: "café-hopping, then thrifting" },
+      { t: "", d: "food", text: "Breakfast" },
+      { t: "", d: "activity", text: "Nakazakichō", note: "vintage shops & kawaii cafés · 12 min walk / 5 min train to Umeda",
+        pid: "ChIJV2R0lpXmAGAR0isU5tWq7pU", ll: [34.7067988, 135.5051143], region: "osaka" },
+      { t: "", d: "food", text: "Lunch · Umeda" },
+      { t: "", d: "shop", text: "Thrifting · Orange Street", note: "2nd Street · SORA · Undefeated · Kindal",
+        pid: "ChIJE_-SNXbnAGARVKJ0eMxArus", ll: [34.6709849, 135.4963594], region: "osaka" },
+      { t: "", d: "food", text: "Dinner" },
+      { t: "", d: "food", text: "Matcha · Nakamura Tokichi Honten", note: "Uji main branch (expect a wait / crowds)",
+        pid: "ChIJsY2yLgkRAWARRxd0gBbV7XI", ll: [34.8895072, 135.8017988], region: "kyoto" },
     ]
   },
   {
-    date:"Jul 6 (Mon)", city:"kyoto", label:"Day 8 · Kyoto · Arashiyama + Knives", est:"~$80-160 + shopping",
-    note:"Dawn bamboo, slow Arashiyama morning — no rush. Cross city mid-morning for knives. Final Kyoto night.",
-    slots:[
-      {t:"6:00am", d:"do",    pid:"ChIJrYtcv-urAWAR3XzWvXv8n_s", detail:`<b>Free, open 24 hours.</b> The main grove path is about 200m — shorter than photos suggest but genuinely magical at dawn. The bamboo creates a rustling canopy sound in the wind; you won't hear it if the tourist crowds are there. <b>Go no later than 6:15am</b> — even in July it's almost empty then. From the bamboo grove: walk north to Jojakko-ji temple (moss-covered, quiet, ¥500), or south to Tenryu-ji garden. <b>Rickshaw rides</b> are available if you want a lazy tour of the wider Arashiyama area after the grove.`, text:"Arashiyama Bamboo Forest", price:"free", tags:["must","early"], note:"Empty at dawn — brutal by 9am in July heat"},
-      {t:"7:00am", d:"do",    pid:"ChIJBXGEbQGqAWARrcXmRDMJaLQ", detail:`<b>Tenryu-ji:</b> ¥500 for the garden only (recommended — the temple interior adds little). One of Japan's finest Zen gardens — a borrowed landscape design using the Arashiyama mountains as backdrop. The sogenchi pond is particularly beautiful. Ranks as a UNESCO World Heritage site. <b>Kimono Forest:</b> free, located at Arashiyama Randen station — 600 poles of Kyoto kimono fabric illuminated by fiber-optic light. More interesting at dusk/night but still visually striking in the morning.`, text:"Tenryu-ji garden + Kimono Forest at Randen station", price:"~$3", note:"Right there — no transit needed"},
-      {t:"9:00am", d:"eat",   text:"Breakfast near Arashiyama", price:"~$15-20"},
-      {t:"10:30am",d:"travel",text:"Arashiyama → central Kyoto (~40-50 min by bus/train)", price:"~$2-3", note:"Allow the full 50 min — Arashiyama is far west"},
-      {t:"11:30am",d:"shop",  pid:"ChIJ__9gpZcIAWARuam9PUv-zBw", detail:`<b>Higashimaecho, Shimogyo Ward</b> — open Mon–Fri 9am–6pm, <b>closed weekends.</b> Master Hayakawa is 88 years old and has been making knives for 70+ years. The shop has been in the family for over 120 years. Small selection — typically gyuto (chef's knife), deba, petty knives. He communicates via phone translator. <b>Process:</b> arrive at opening, join the physical queue. He works slowly and carefully with each customer. Knives range ¥15,000–40,000. He will sharpen any knife you bring. <b>Retiring in 2027</b> — one of the last chances to buy from him directly. Cash only. Bring patience.`, text:"Hayakawa Hamonoten — knives", price:"~$100-270", tags:["must","group"], note:"Physical queue only, no waitlist. Arrive at opening. Reportedly closing soon."},
-      {t:"11:30am",d:"shop",  detail:`<b>KUOE Kyoto</b> (224 Eirakucho, Nakagyo) — custom watch microbrand. Select the case, dial, strap, and buckle from their components; assembled in-store in 15–20 min. Watches from ~¥25,000–60,000. No appointment needed but gets busy — ticket system when crowded. <b>Closed Tuesdays.</b> <b>Glanta</b> (also nearby) — silver ring-making workshop, ~1hr experience, ~¥5,000–8,000. Book ahead at their website. You hammer, file, and finish your own ring. A good parallel activity while others queue for knives.`, text:"(While waiting) KUOE watches + Glanta ring-making nearby", price:"watch ~$100-300 · ring ~$50-80", tags:["group"], note:"Glanta ~1hr experience; book ahead"},
-      {t:"7:00pm", d:"eat",   pid:"ChIJP2DblBgJAWARAgLlF0vWT6o", detail:`Last Kyoto dinner — make it count. <b>Higashiyama options:</b> Ryokan Yoshikawa (kaiseki, beautiful garden room), or one of the narrow-lane restaurants off Ninen-zaka. <b>Pontocho:</b> kawayuka terrace in July — ask specifically for riverside seating. <b>Budget pick:</b> Kyoto Gogyo (noodles in burnt miso broth, a Kyoto specialty — dramatically different from standard ramen). Whatever you pick, book ahead — Kyoto restaurants fill up fast in summer.`, text:"Final Kyoto dinner — Higashiyama or Pontocho", price:"~$30-60", tags:["book"]},
-      {t:"9:30pm", d:"bar",   pid:"ChIJTb-8AWoJAWARRnZGKmnbqgc", detail:`<b>4F Hotel Seiryu Kiyomizu, 2-204-2 Kiyomizu, Higashiyama.</b> ¥1,100 cover charge per person (includes one drink token). Opens 3pm. The only bar in Kyoto at eye level with the Yasaka Pagoda — the view is genuinely spectacular at night. <b>Go before 9pm</b> for the best views (rooftop terrace gets full, you may be seated inside instead after a certain hour). Cocktails ¥1,500–2,500. <b>Reserve online</b> for a minimum spend if you want guaranteed seating — walk-in is possible but uncertain. Edward can order a mocktail or sparkling water; bar makes non-alcoholic options.`, text:"K36 Rooftop Bar — Yasaka Pagoda views · Bar night #1", price:"~$22-27 total", note:"Hotel Seiryu Kiyomizu. Go before 9:30pm for the view."},
+    date: "Mon · Jul 6", label: "Osaka → Kyoto",
+    slots: [
+      { t: "10:00a", d: "hotel", text: "Check out: Airbnb (Chūō-ku)" },
+      { t: "", d: "travel", text: "🚆 Osaka → Kyoto", dur: "~30m", note: "JR Special Rapid, Osaka Stn → Kyoto Stn (or ~15m Shinkansen Shin-Osaka → Kyoto)" },
+      { t: "3:00p", d: "hotel",
+        text: 'Check in: <a href="https://www.hyatt.com/hyatt-place/en-US/kyozk-hyatt-place-kyoto" target="_blank" rel="noopener">Hyatt Place Kyoto</a>',
+        pid: "ChIJe3SwxM4JAWAR6xCGjrL7DuI", ll: [35.0154162, 135.7592566], region: "kyoto",
+        detail: '<div class="dl"><b>Check-in</b> Mon Jul 6 · 3:00 PM</div><div class="dl"><b>Checkout</b> Thu Jul 9 · 12:00 PM</div>'
+      },
     ]
   },
   {
-    date:"Jul 7 (Tue)", city:"osaka", label:"Day 9 · Kyoto → Osaka", est:"~$80-120",
-    note:"No need to rush out of Kyoto. Osaka arrival late morning — Kuromon, Dotonbori wander, big AYCE dinner.",
-    slots:[
-      {t:"10:00am",d:"travel",text:"Check out → Osaka by Hankyu express", price:"~$4", note:"~30 min. No rush — leave when ready."},
-      {t:"11:00am",d:"do",    pid:"ChIJXSJB5UHnAGARQcEjvngsHaw", detail:`<b>"Osaka's Kitchen"</b> — 170+ vendors in a covered arcade, running since 1902. <b>Best before noon</b> when stalls are fully stocked and fish is freshest. <b>What to eat:</b> fresh tuna (look for <i>Maguro Yamamoto</i> or similar tuna specialists — ¥500 for a thick nigiri made in front of you), grilled seafood on skewers, fresh oysters, wagyu skewers. Some stalls have standing counters. <b>Tip:</b> walk the full length first to compare, then come back to the best stalls. Some vendors accept card but <b>cash is safer.</b>`, text:"Kuromon Market — fresh tuna, stalls", price:"~$10-20", tags:["must"], note:"Best before noon"},
-      {t:"12:30pm",d:"eat",   detail:`<b>Rikuro Ojisan:</b> flagship near Namba Station — the jiggly soufflé cheesecake comes out of the oven every 15 min, branded with the Rikuro mascot face. One whole cake is ¥935 — get it warm. Eat it within a few hours (collapses as it cools, still tastes good though). <b>Takoyaki:</b> Osaka is the home of takoyaki — try <i>Wanaka</i> or <i>Aizuya</i> in Dotonbori rather than the tourist-facing chains. The batter should be creamy inside, crispy outside. Standard order: 8 balls (~¥700). Toppings: mayo, bonito flakes, seaweed, sauce.`, text:"Rikuro Ojisan cheesecake + takoyaki — casual lunch stroll", price:"~$15-25", tags:["must"]},
-      {t:"2:30pm", d:"do",    pid:"ChIJg2DcJhXnAGARCbeAHoZrPeQ", detail:`<b>Dotonbori:</b> the neon canal strip — Glico Running Man is the main photo spot. The canal boat tour (¥1,000) is a good way to see it. <b>Best at night</b> when the signs are lit. <b>Shinsekai:</b> retro 1920s entertainment district south of Dotonbori — <i>Tsutenkaku</i> tower, kushikatsu restaurants everywhere, vintage pachinko arcades. A different Osaka from the tourist strip. <b>Kushikatsu rule:</b> never double-dip the communal sauce — serious faux pas.`, text:"Dotonbori / Shinsekai wander — Glico Running Man, neon, arcades", price:"free", note:"No agenda — just wander"},
-      {t:"5:00pm", d:"shop",  pid:"ChIJg2DcJhXnAGARCbeAHoZrPeQ", detail:`<b>Shinsaibashi-suji</b> covered arcade runs 600m — everything from Uniqlo to Hermès. <b>Nubian</b> (Shinsaibashi area) — curated Japanese streetwear, hard-to-find brands, good curation for men and women. <b>Amerika-mura</b> (American Village) nearby has Osaka's best vintage and streetwear concentration. <b>Orange Street</b> (Kitahorie) is a quieter design-forward street — furniture, homewares, boutique fashion, coffee. More adult than Amerika-mura.`, text:"Shinsaibashi / Nubian + Orange Street vintage", price:"varies", tags:["must"]},
-      {t:"7:00pm", d:"eat",   pid:"ChIJz70hzbXnAGARDtfAnqJRUdI", detail:`<b>ECS Dai 32 Building 7F-B, 3-4-16 Namba.</b> 2 min from Namba Station. Opens noon weekends, 4pm weekdays. Private rooms available — request when booking. Course options include snow crab, red snow crab, king crab. <b>Also included:</b> wagyu sushi, uni hand rolls, ikura rolls, shabu-shabu. 90-min or 120-min time slots. <b>Book well ahead</b> — this is the marquee meal of the Osaka leg. <b>Card accepted.</b> Dress smart-casual for private room dining.`, text:"Osaka Kanigin Namba — AYCE crab, wagyu, sushi, shabu-shabu", price:"~$60-80", tags:["must","book"], note:"The AYCE of the trip. Private rooms; book well ahead."},
+    date: "Tue · Jul 7", label: "Kyoto",
+    slots: []
+  },
+  {
+    date: "Wed · Jul 8", label: "Kyoto",
+    slots: []
+  },
+  {
+    date: "Thu · Jul 9", label: "Kyoto → Tokyo",
+    slots: [
+      { t: "12:00p", d: "hotel", text: "Check out: Hyatt Place Kyoto" },
+      { t: "", d: "travel", text: "🚄 Shinkansen: Kyoto → Tokyo", dur: "~2h15m", note: "Kyoto Station → Tokyo Station · Nozomi" },
+      { t: "3:00p", d: "hotel",
+        text: "Check in: ALFIT Hotel &amp; Bar Akasaka",
+        pid: "ChIJpZBb7vuLGGARZZe1b7qY6Fk", ll: [35.67291, 139.7377715], region: "tokyo",
+        detail: '<div class="dl"><b>Check-in</b> Thu Jul 9 · 3:00 PM</div><div class="dl"><b>Checkout</b> Sun Jul 12 · 11:00 AM</div>'
+      },
     ]
   },
   {
-    date:"Jul 8 (Wed)", city:"osaka", label:"Day 10 · Osaka · Katsuo-ji + Minoh", est:"~$40-60",
-    note:"Forested morning hike, then Daruma temple. Back in Osaka by 3pm. Free afternoon — rest or explore.",
-    slots:[
-      {t:"8:30am", d:"travel",text:"Osaka → Minoh station (Hankyu Minoh Line, ~30 min)", price:"~$3"},
-      {t:"9:00am", d:"do",    pid:"ChIJE8YKbYz5AGARoCiDnK6410w", detail:`<b>From Minoh Station</b> (Hankyu Minoh Line) — trail starts at the station. Well-paved, family-friendly path along a stream through a forested gorge. <b>About 2.8km to the falls</b> (Minoh Otaki, 33m high) — allow 1.5hrs RT at a relaxed pace. The gorge is noticeably cooler than central Osaka. <b>Look out for:</b> Japanese macaques along the trail — don't feed them. <b>Dried maple leaves</b> (momiji tempura) sold at stalls near the trailhead — a Minoh specialty, unusual and worth trying. Wear comfortable shoes; path is paved but uneven in places.`, text:"Minoh Falls hike — shaded gorge trail, ~3.6mi RT", price:"free", note:"Cooler than central Osaka; take your time"},
-      {t:"11:00am",d:"travel",text:"Minoh station → Katsuo-ji by bus (~25 min)", price:"~$2", note:"Take the bus — don't walk this stretch"},
-      {t:"11:30am",d:"do",    pid:"ChIJtX8053n5AGARND16wXHGXg0", detail:`<b>2914-1 Aomatani, Minoh.</b> ¥400 entry. A hilltop Shingon Buddhist temple famous for thousands of <i>Daruma</i> dolls left by worshippers — covering railings, stone walls, stairs, everywhere. The atmosphere is genuinely eerie and memorable, especially in morning mist. <b>Stamp rally:</b> collect stamps at different points around the temple grounds — the postcard you receive is stamped at each checkpoint. <b>IC card required</b> for the bus (¥800 from Minoh Station — no cash). The temple grounds take about 1hr to explore properly.`, text:"Katsuo-ji Temple — Daruma-filled hilltop temple", price:"~$3", tags:["must"], note:"Hundreds of Daruma dolls — eerie and memorable. Allow a full hour."},
-      {t:"1:00pm", d:"eat",   text:"Lunch near Minoh — trailhead spots", price:"~$10-15"},
-      {t:"2:30pm", d:"travel",text:"Return to Osaka", price:"~$3"},
-      {t:"3:30pm", d:"do",    text:"Free afternoon — rest at hotel or wander Osaka", price:"free"},
-      {t:"7:30pm", d:"eat",   pid:"ChIJF9AXoBznAGARi-T-JyJ_UEQ", detail:`<b>Kaiko Building 2F, 1-8-20 Namba.</b> No reservations — join the digital queue via QR code when you arrive in the area. Wait times 1.5–2.5hrs in the evening; the queue lets you wait elsewhere (wander Dotonbori) and receive a notification. <b>What to order:</b> the wagyu tataki jyu (seared wagyu over rice box) with uni and ikura on top is the signature. Also: 100g wagyu bowl. Chef Akira prepares the wagyu for 3 days before service. <b>Closed Mondays.</b> Counter seating only. Cash and card accepted.`, text:"Dinner — Wagyu Idaten (A5 wagyu boxes, Namba)", price:"~$30-50", note:"Not AYCE. Add your name to the wait list when you get to the area."},
+    date: "Fri · Jul 10", label: "Tokyo",
+    slots: [
+      { t: "", d: "note", text: "Kichijoji thrifting (maybe)", note: "afternoon crawl before Hikiniku — all walkable in Kichijoji" },
+      { t: "", d: "shop", text: "2nd Street", note: "4 floors, Kichijoji Sunroad",
+        pid: "ChIJa1dRTUbuGGARKFMxCq54rhA", ll: [35.705436, 139.580814], region: "tokyo" },
+      { t: "", d: "shop", text: "Kindal Kichijoji", note: "above the 7-Eleven · closed Weds",
+        pid: "ChIJaQKivUjuGGARB9NccUArF7M", ll: [35.7056429, 139.5780956], region: "tokyo" },
+      { t: "", d: "shop", text: "Mode Off",
+        pid: "ChIJj3CBZ0buGGAR5fzZFHg_fnA", ll: [35.7067183, 139.5809817], region: "tokyo" },
+      { t: "", d: "shop", text: "TreFacStyle Kichijoji",
+        pid: "ChIJnaNdQdbvGGARRDiK2iNtN-I", ll: [35.7033823, 139.5846633], region: "tokyo" },
+      { t: "", d: "shop", text: "Ragtag Kichijoji", note: "consignment / designer",
+        pid: "ChIJUave-TfuGGARnPjGOhCJi5M", ll: [35.701819, 139.5787325], region: "tokyo" },
+      { t: "8:15p", d: "food", text: "Hikiniku to Come · Kichijoji", note: "Hamburger steak · prepaid voucher",
+        pid: "ChIJqdnczB3vGGARH6a7Qauu5CY", ll: [35.7058316, 139.5777871], region: "tokyo",
+        detail: '<div class="dl"><b>Voucher</b> ¥8,940 (prepaid)</div><div class="dl"><b>Booking</b> 3XZFA5</div><div class="dl"><b>Note</b> Kichijoji branch · closed Wednesdays</div><div class="dl"><b>Confirm</b> <a href="https://drive.google.com/file/d/17hDeDnDoBB92H82Z7KZpDzrMm5qxhH78/view" target="_blank" rel="noopener">PDF ↗</a></div>' },
     ]
   },
   {
-    date:"Jul 9 (Thu)", city:"osaka", label:"Day 11 · Osaka + Kobe", est:"~$100-160",
-    note:"Unhurried Kobe day. Long walk, long lunch, easy return. No evening agenda.",
-    slots:[
-      {t:"10:00am",d:"travel",text:"Osaka → Kobe (Hankyu or JR, ~30 min)", price:"~$4", note:"No need to rush out"},
-      {t:"11:00am",d:"do",    pid:"ChIJT6cViuCOAGARegX_ORkvbs0", detail:`<b>Kitano Ijinkan:</b> hillside district of 19th-century Western-style residences built by foreign merchants and diplomats. Several are open as museums (¥500–1,500 each or combo ticket). The Weathercock House and Moegi House are the most atmospheric. <b>Kobe Harbor:</b> Meriken Park has good views of the bay and the iconic red-and-white lighthouse. <b>Nankinmachi Chinatown:</b> compact but lively — <i>butaman</i> (pork bun) from Rousoken is the signature Kobe Chinatown food, eaten standing outside.`, text:"Kobe walk — Kitano Ijinkan, harbor, Nankinmachi Chinatown", price:"free-$5", note:"Give yourself 2hrs — Kobe is easy and pleasant to wander"},
-      {t:"1:30pm", d:"eat",   pid:"ChIJT6cViuCOAGARegX_ORkvbs0", detail:`<b>Three well-regarded options:</b> <b>Aragawa</b> — one of the world's most expensive restaurants, teppan, ¥50,000+pp, book months ahead. <b>Mouriya</b> (est. 1910) — more accessible, teppan, ¥15,000–25,000 lunch course, book 2–4 weeks ahead. <b>Ishida</b> — yakiniku style, grill your own A5 at the table, ¥10,000–20,000, easier to book. <b>Kobe beef specifically:</b> must be Tajima-gyu cattle, raised in Hyogo Prefecture, BMS marbling score 6+, certified. The fat melts at body temperature. Order the <i>sirloin</i> and <i>fillet</i> — avoid the cheaper cuts that don't showcase the marbling. <b>Card accepted</b> at all three.`, text:"Kobe beef lunch — A5 yakiniku or teppan", price:"~$80-150", tags:["must"], note:"Aragawa, Mouriya, or Ishida. Take your time — this is the meal of the day."},
-      {t:"4:30pm", d:"travel",text:"Return to Osaka", price:"~$4"},
-      {t:"7:00pm", d:"eat",   text:"Light dinner — ramen or konbini (big lunch day)", price:"~$10-15"},
+    date: "Sat · Jul 11", label: "Tokyo",
+    slots: [
+      { t: "", d: "travel", text: "Austin departs", note: "evening / night of the 11th" },
     ]
   },
   {
-    date:"Jul 10 (Fri)", city:"tokyo", label:"Day 12 · Osaka → Tokyo", est:"~$90-140",
-    note:"All three to Tokyo together. Drop bags at Ryogoku, then straight to Ginza for tendon lunch + MUJI. Shimokitazawa evening, Golden Gai to close.",
-    slots:[
-      {t:"9:00am", d:"eat",   text:"Breakfast — Onigiri Gorichan (Osaka's best onigiri)", price:"~$8-12"},
-      {t:"10:30am",d:"travel",text:"Shinkansen Osaka → Tokyo (Nozomi, ~2h30)", price:"~$90 or JR Pass", note:"Ekiben bento on the train"},
-      {t:"1:00pm", d:"stay",  pid:"ChIJGeu4VDWJGGARdPoda8d8I3A", detail:`<b>Ryogoku area</b> — the sumo district of Tokyo. YUURO is a ryokan-style hotel near Ryogoku Station. The area has a different character from Shinjuku — older, more local, quieter. If the room isn't ready, leave bags at the front desk and head to Ginza. <b>Nearby:</b> Ryogoku Kokugikan (sumo arena), Edo-Tokyo Museum, chanko-nabe restaurants (sumo wrestler stew — a proper hearty meal).`, text:"Drop bags: YUURO Ryogoku (check-in)", note:"Drop luggage then head straight to Ginza"},
-      {t:"2:00pm", d:"eat",   pid:"ChIJRZGCCOWLGGARTbuL5FrsFcM", detail:`<b>3-1 Ginza, 2F Inz 1 Building.</b> 2 min from Yurakucho Station. <b>No reservations — walk-in only.</b> Queue forms before 11am opening. On a Friday afternoon, 30–60 min is realistic. No chairs in the queue — stand outside. Counter seating only (~20 seats). <b>What to order:</b> the Special Tendon (¥1,900) — 2 prawns, squid, chicken, half-boiled egg, 4 vegetables, miso soup, pickles over rice. The tempura batter is lighter than typical tendon; the sauce is sweet-savory. <b>Halal certified.</b> Cash and card accepted. Done in 20–25 min once seated.`, text:"Tendon Ginza Itsuki — tempura tendon", price:"~$15-20", tags:["must"], note:"No reservations — walk-in only. Expect 30-60 min wait. Standing queue, no chairs."},
-      {t:"3:30pm", d:"shop",  pid:"ChIJfc-uOKqLGGAR-bVyIUWjtQo", detail:`<b>3-3-5 Ginza</b> — the global flagship, 6 floors. <b>B1F:</b> MUJI Diner and bakery (good for a quick bite). <b>1F:</b> food products, snacks, Japanese-exclusive items. <b>2F–3F:</b> clothing — Japan sizing, Japan-exclusive colorways and fabrics. <b>4F:</b> stationery and household. <b>5F:</b> furniture. <b>6F:</b> MUJI Hotel lobby (you can walk through). <b>Japan exclusives to look for:</b> specific fabric clothing items, Japanese food seasonings, reMUJI (upcycled items). Tax-free counter on 1F — bring your passport. <b>Opens 11am.</b>`, text:"MUJI Ginza Flagship — all three", price:"varies", tags:["must","group"], note:"Japan-exclusive items; basement food floor. Right next to Tendon Itsuki."},
-      {t:"5:00pm", d:"shop",  pid:"ChIJ-RETm8nzGGARIpEurSKyAYI", detail:`<b>Shimokitazawa</b> is Tokyo's vintage and independent culture hub — dozens of shops within a 10 min walk radius. <b>Best vintage shops:</b> Flamingo, New York Joe Exchange, Pigsty, 2nd Street. Most open 11am–9pm. <b>Blue Elephant</b> (near south exit) — independent optician specializing in unique frames, many Japanese designers. Prescription lenses can be cut same-day or next day. Frame-only browsing is fine. <b>Also worth noting:</b> Shimokitazawa has excellent small live music venues, independent bookshops (Garage Department), and good coffee (Bear Pond Espresso, Café Fuga).`, text:"Shimokitazawa — thrifting + Blue Elephant glasses", price:"varies", tags:["must","group"], note:"~35 min from Ginza. Blue Elephant is right in Shimokita."},
-      {t:"7:30pm", d:"eat",   pid:"ChIJ-RETm8nzGGARIpEurSKyAYI", detail:`<b>Kissa Ray</b> — retro-style kissaten (Japanese coffee shop) with thick sandwiches and Japanese curry, good atmosphere. <b>202 Curry</b> — Japanese-style curry (thicker, sweeter than Indian, served over rice with pickles), casual, inexpensive. <b>Izakaya option:</b> Shimokitazawa has excellent small izakayas — look for handwritten signs outside, a good indicator of a locals' spot. The Bon bar area near the south exit has a cluster of small bars and restaurants worth wandering.`, text:"Dinner in Shimokitazawa — Kissa Ray, 202 Curry, or izakaya", price:"~$15-25"},
-      {t:"9:30pm", d:"bar",   pid:"ChIJr7mGZdmMGGARjxoMFeHApXE", detail:`<b>Kabukicho 1-1-6, Shinjuku</b> — six narrow alleys with 200+ micro-bars, each seating 5–10 people. Each bar has its own theme, music, and personality. <b>Finding the right bar:</b> look for signs in English that say "tourists welcome" — some bars are regulars-only (cover charges as high as ¥2,000 are a sign you may not be welcome). <b>Good starting bars:</b> Albatross (multi-floor, eclectic), Deathmatch in Hell (rock, friendly), Bar Albatross G (quieter). Order whatever the bar specializes in — many have a signature drink or spirit. <b>Edward:</b> most bars have non-alcoholic options; ask "nomi mono wa arimasu ka?" (do you have soft drinks?). Best after 10pm when the atmosphere peaks.`, text:"Golden Gai (Shinjuku) — 280+ tiny bars · Bar night #2", price:"~$10-20", note:"~20 min from Shimokitazawa. Some bars are locals-only — look for welcome signs."},
-    ]
-  },
-  {
-    date:"Jul 11 (Sat)", city:"tokyo", label:"Day 13 · Tokyo · Final group day", est:"~$120-180 + shopping",
-    note:"Last full day together. Spread across the day — no rushing. Big dinner, Benfiddich to close.",
-    slots:[
-      {t:"7:00am", d:"eat",   pid:"ChIJW2cLzSGLGGARXAKXv6EkbqI", detail:`<b>4-16 Tsukiji, Chuo.</b> The inner wholesale market moved to Toyosu in 2018; the outer market remains. <b>Best before 10am</b> — many stalls close by noon. <b>What to eat:</b> fresh tuna nigiri at Maguroya Kurogin (thick-cut, outstanding), grilled scallops on the shell (~¥400), tamagoyaki (egg roll, ¥300–400 — there's always a queue), fresh oysters. <b>Kiyomura's tuna toro</b> is famous but has a long queue — decide if the wait is worth it. Walk the outer market first to see everything before committing. <b>Cash preferred.</b>`, text:"Tsukiji Outer Market — early stalls", price:"~$15-25", tags:["early"], note:"Maguroya Kurogin tuna nigiri. Leave by 9am."},
-      {t:"9:30am", d:"drink", detail:`Specialty coffee in Kiyosumi-Shirakawa, Tokyo's most concentrated coffee neighborhood. Book ahead via their website — they run a tasting experience format, not just a café. Expect a guided tasting of 2–3 single-origin coffees with explanation of origin, processing, and flavour profile. About 1hr. <b>Dress code:</b> none, but it's a quiet focused experience — not a grab-and-go. Other great coffee nearby in Kiyosumi-Shirakawa: Arise Coffee Roasters, Blue Bottle Coffee (their first Japan location was here), Fuglen (Norwegian, excellent).`, text:"Cokuun Coffee — Austin's rec", price:"~$8-12", tags:["book"], note:"Book ahead. Central Tokyo — easy after Tsukiji."},
-      {t:"11:30am",d:"do",    pid:"ChIJGeu4VDWJGGARdPoda8d8I3A", detail:`<b>The Kokugikan</b> (sumo arena) hosts 3 of Japan's 6 annual basho (tournaments) — January, May, September. You're visiting in July, so no tournament. <b>What to do:</b> walk the perimeter of the arena (exterior is impressive), look for the sumo stable buildings nearby — you can hear wrestlers training in the morning (5:30–8am) if you walk past the stable windows. <b>Chankonabe restaurants</b> in the area serve the high-protein stew sumo wrestlers eat — try Chanko Tomoegata for lunch. The <b>Sumo Museum</b> (inside Kokugikan, free) is small but good if open.`, text:"Ryogoku Kokugikan neighborhood — sumo stable walk", price:"free", tags:["must"], note:"Nagoya Basho is mid-July — just after you leave. Free and atmospheric."},
-      {t:"1:00pm", d:"eat",   pid:"ChIJr7mGZdmMGGARjxoMFeHApXE", detail:`<b>Oreryu Shio Ramen</b> (Omotesando) — salt-based (shio) broth, cleaner and more delicate than tonkotsu. The counter forces you to focus on the bowl. <b>Menya Musashi</b> (Shinjuku, multiple locations) — tsukemen (dipping noodles) specialist. You dip thick noodles into a concentrated dipping broth, eating them cool. Two very different styles — pick based on what you haven't tried yet on the trip. Both open for lunch 11am–3pm; queue before opening if you want to avoid a wait.`, text:"Ramen lunch — Oreryu Shio Ramen or Menya Musashi", price:"~$10-15"},
-      {t:"2:30pm", d:"do",    detail:`<b>Note: Mizutani Camera is in Ueno</b> (4-6-6 Ueno, not Shinjuku) — about 25 min from Shinjuku by train. Specializes in <b>used film cameras</b> (Leica, Contax, Nikon F, vintage Rolleiflex) and used digital gear. Not a tourist trap — serious camera shop with knowledgeable staff. Prices are fair; expect ¥10,000–80,000+ for a good film body. They test everything before selling. <b>Akihabara</b> also has secondhand camera shops worth browsing (Map Camera, Lemon Camera) — on the way from Ueno to Shinjuku.`, text:"Mizutani Camera (Shinjuku)", price:"browsing/buying", tags:["must"]},
-      {t:"4:00pm", d:"shop",  detail:`<b>ACE Luggage</b> (Shinjuku Takashimaya Times Square, 6F) — Japanese luggage brand, excellent quality hard-shell cases, better value than Rimowa. <b>BIC Camera</b> (west Shinjuku, large branch) — carries ACE, Samsonite, Rimowa, and generic brands. <b>Proteca</b> (ACE sub-brand) is the premium Japanese option — extremely light, Japanese-airport-roller quality. Budget ¥15,000–30,000 for a solid medium case. <b>Tax-free on luggage</b> with passport. Have your existing bags at the hotel — easier to size-compare.`, text:"Buy suitcases — ACE Luggage or BIC Camera, both in Shinjuku", price:"~$100-330", note:"Camera and suitcases back to back — same neighborhood"},
-      {t:"7:30pm", d:"eat",   pid:"ChIJQZqLszyMGGAR_0fPsHLwL_Q", detail:`<b>3-27-9 Hongo, Bunkyo</b> — small shop (10 seats), reservation essential. <b>Book via TableCheck or Tableall</b> — releases 1 month ahead, books out fast. Order the "recommended set" — the chef guides you on grill time for each cut. The sirloin is extraordinary; the beef tongue (from the tip — be warned, tougher than standard tongue) is divisive. <b>Grilling tips:</b> staff will demonstrate — high heat, short time for marbled cuts. The whole peach ice cream dessert is a signature finish. <b>Bunkyo to Shinjuku:</b> ~25 min by Marunouchi or Oedo line for Benfiddich after dinner.`, text:"Final dinner — Jambo Hanare A5 wagyu yakiniku (Bunkyo)", price:"~$60-100", tags:["must"], note:"Book well ahead."},
-      {t:"10:30pm",d:"bar",   pid:"ChIJZUTGW9GMGGAROJ7G4sU221Q", detail:`<b>1-13-7 Nishishinjuku, 9F</b> — the elevator takes you straight up. ~15 seats total. Bartender Hiroyasu Kayama grows many of his own ingredients on a farm and distills some spirits in-house. <b>No menu</b> — you describe flavours and moods, he interprets. Tell him if you prefer citrus-forward, spirit-forward, floral, smoky etc. <b>Price:</b> ¥2,500–3,500 per cocktail, 2–3 drinks typical. Cover charge ~¥500. <b>Reserve via TableCheck</b> — releases monthly, books out immediately. If you can't get a reservation, a small walk-in queue forms at opening (7pm) — arrive at 6:50pm and wait. <b>Opens 7pm, last order 1am.</b>`, text:"Bar Benfiddich (Shinjuku) — bespoke cocktails · Bar night #3", price:"~$25-40", tags:["must"], note:"Asia's 50 Best #9. Reserve via TableCheck. The send-off."},
-    ]
-  },
-  {
-    date:"Jul 12 (Sun)", city:"travel", label:"Day 14 · Tokyo → Departure", est:"~$30-50",
-    note:"Edward & Ethan fly NRT → TPE at 8:40pm. At NRT by 5:30pm. Austin departs separately.",
-    slots:[
-      {t:"Morning",d:"eat",   text:"Final konbini breakfast — 7-Eleven near Tokyo Tower", price:"~$5-8", note:"Strong zero + onigiri — full circle"},
-      {t:"12:00pm",d:"eat",   detail:`<b>Tsujihan</b> (multiple Tokyo locations) — kaisendon (seafood rice bowl) with the signature "second course" trick: eat the toppings first, then pour dashi broth over the remaining rice for a soup course. The tuna, salmon, and ikura bowl (~¥2,000) is the move. <b>Queue:</b> arrives early, 30–60 min typical. <b>Near Tokyo Station:</b> the station's Gransta food hall (B1F) has excellent sushi counters and bento — ideal for a last meal before heading to Narita.`, text:"Last lunch — Tsujihan kaisendon or sushi stand", price:"~$15-25"},
-      {t:"2:00pm", d:"shop",  detail:`<b>Tokyo Station Gransta and Ichibangai</b> (B1F, 1F) — best last-minute souvenir shopping in Tokyo. <b>Top picks:</b> Tokyo Banana (the mascot sweet), Shigure (matcha and sweet varieties), Yokumoku cigar cookies, Kit Kat Japan exclusives (matcha, sake, wasabi), Tokyo ramen kits, Japanese curry packets (S&B, Vermont Curry). Budget ¥500–2,000 per item. <b>Suica penguin</b> goods at the Suica shop — stationery and accessories featuring the IC card mascot. Everything tax-free with passport. Narita Express departs from Narita Express platforms at Tokyo Station — arrive 15 min early.`, text:"Last-minute souvenirs — Tokyo Station", price:"~$20-40"},
-      {t:"4:00pm", d:"travel",text:"Head to Narita (NRT) — Narita Express (~90 min)", price:"~$15"},
-      {t:"8:40pm", d:"travel", text:"JX 805 · NRT → TPE", note:"Arrives 11:20pm"},
-      {t:"9:35am+1",d:"travel", text:"DL 0068 · TPE → SEA", note:"Jul 13 · Arrives 6:00am (same day)"},
-      {t:"9:45am",  d:"travel", text:"DL 1412 · SEA → SFO", note:"Arrives 12:04pm · T1"},
+    date: "Sun · Jul 12", label: "Tokyo → Taipei",
+    slots: [
+      { t: "11:00a", d: "hotel", text: "Check out: ALFIT Akasaka" },
+      { t: "~6:00p", d: "travel", text: "🚆 Akasaka → Narita (NRT)", dur: "~1h30m", note: "Narita Express / Skyliner + subway — leave buffer for an int'l departure" },
+      { t: "8:40p", d: "travel", text: "Edward &amp; Ethan: NRT → TPE ✈️" },
+      { t: "late", d: "hotel",
+        text: 'Check in: <a href="https://www.hyatt.com/hyatt-regency/en-US/tpera-hyatt-regency-taoyuan-international-airport" target="_blank" rel="noopener">Hyatt Regency Taoyuan Int\'l Airport</a>',
+        pid: "ChIJI9MGFdSfQjQRWq3b2i_6Ju8", ll: [25.0688829, 121.2213232], region: "taipei",
+        detail: '<div class="dl"><b>Check-in</b> Sun Jul 12 · 3:00 PM (late arrival)</div><div class="dl"><b>Checkout</b> Mon Jul 13 · 11:00 AM</div>'
+      },
     ]
   },
 ];
 
-// ── Place lookup (pid → {lat, lng, name, city}) ─────────────────────────
-const PLACE_DATA = {
-  'ChIJJ7La1yzzGGARln2OypSj2Cw': {lat:35.6862,lng:139.6905,name:'Park Hyatt Tokyo',city:'Tokyo'},
-  'ChIJP9eKBdeMGGAR0zzBXJNVj5A': {lat:35.6927,lng:139.6996,name:'Omoide Yokocho',city:'Tokyo'},
-  'ChIJWdhcBWCLGGARxuyISzMZfGU': {lat:35.6638,lng:139.7121,name:'Sushi Kidoguchi',city:'Tokyo'},
-  'ChIJlVne8bqMGGARtX5O6ojMvsI': {lat:35.6710,lng:139.7052,name:'Harajuku / Omotesando',city:'Tokyo'},
-  'ChIJvaN4mziLGGAR6t4CkHY0hCw': {lat:35.6499,lng:139.7055,name:'Dolce Tacubo',city:'Tokyo'},
-  'ChIJsWJ80PiNGGAR8aSF8OFJeu4': {lat:35.6593,lng:139.6976,name:'Hikiniku to Come',city:'Tokyo'},
-  'ChIJLT73m3eLGGARdRlWxF-2SnU': {lat:35.6709,lng:139.7619,name:'Onitsuka Tiger Ginza',city:'Tokyo'},
-  'ChIJl0TCagKNGGAR9pSy4NY5l94': {lat:35.6905,lng:139.6995,name:'Odakyu Romancecar',city:'Tokyo'},
-  'ChIJhfCwMAaiGWARW2IZmApNjZU': {lat:35.2387,lng:139.0442,name:'Ten-Yu Hakone',city:'Hakone'},
-  'ChIJoT-oK-mYGWARy-ItUPA6ekk': {lat:35.2096,lng:139.0035,name:'Lake Ashi',city:'Hakone'},
-  'ChIJY2br3DCfGWARMDFegqz4huQ': {lat:35.2456,lng:139.0211,name:'Owakudani Ropeway',city:'Hakone'},
-  'ChIJv8RJ2o8IAWARvb9D_eZ-Abw': {lat:35.0091,lng:135.7633,name:'Nol Kyoto Sanjo',city:'Kyoto'},
-  'ChIJT8uMzZwIAWARnGzsARCjnrY': {lat:35.0050,lng:135.7647,name:'Nishiki Market',city:'Kyoto'},
-  'ChIJP2DblBgJAWARAgLlF0vWT6o': {lat:35.0039,lng:135.7710,name:'Pontocho Alley',city:'Kyoto'},
-  'ChIJIW0uPRUPAWAR6eI6dRzKGns': {lat:34.9677,lng:135.7792,name:'Fushimi Inari Taisha',city:'Kyoto'},
-  'ChIJ7V6ukxUPAWAR1z7SkqVGAA0': {lat:34.9684,lng:135.7742,name:'Vermillion Cafe',city:'Kyoto'},
-  'ChIJB_vchdMIAWARujTEUIZlr2I': {lat:34.9947,lng:135.7847,name:'Kiyomizu-dera',city:'Kyoto'},
-  'ChIJcadqE4wIAWAR2BeU0_UOXtE': {lat:35.0145,lng:135.7674,name:'Ippodo Tea',city:'Kyoto'},
-  'ChIJvUbrwCCoAWARX2QiHCsn5A4': {lat:35.0394,lng:135.7292,name:'Kinkaku-ji',city:'Kyoto'},
-  'ChIJ3asJPSqoAWARaecNxjPnh8s': {lat:35.0344,lng:135.7182,name:'Ryoanji Rock Garden',city:'Kyoto'},
-  'ChIJh8ezaNwJAWARmKlGTSmqPJc': {lat:35.0055,lng:135.7736,name:'Gion Shirakawa',city:'Kyoto'},
-  'ChIJdapH2MEIAWAR4M8GwwL-axs': {lat:35.0049,lng:135.7738,name:'Kappo Hassun',city:'Kyoto'},
-  'ChIJCZEK8wimAWARi1RkteQaAh0': {lat:35.1221,lng:135.7629,name:'Kifune Shrine',city:'Kyoto'},
-  'ChIJqcbJieKlAWARjbvKL96apfQ': {lat:35.1253,lng:135.7639,name:'Hirobun (Kawadoko)',city:'Kyoto'},
-  'ChIJsY2yLgkRAWARRxd0gBbV7XI': {lat:34.8895,lng:135.8018,name:'Nakamura Tokichi',city:'Uji'},
-  'ChIJqyva4AwRAWARpAf6j5MUhGA': {lat:34.8893,lng:135.8077,name:'Byodo-in Temple',city:'Uji'},
-  'ChIJrYtcv-urAWAR3XzWvXv8n_s': {lat:35.0168,lng:135.6713,name:'Arashiyama Bamboo Forest',city:'Kyoto'},
-  'ChIJBXGEbQGqAWARrcXmRDMJaLQ': {lat:35.0157,lng:135.6734,name:'Tenryu-ji Garden',city:'Kyoto'},
-  'ChIJ__9gpZcIAWARuam9PUv-zBw': {lat:35.0018,lng:135.7633,name:'Hayakawa Hamonoten',city:'Kyoto'},
-  'ChIJBc57aw4JAWARNRkUdgsACvY': {lat:35.0085,lng:135.7668,name:'KUOE Watches',city:'Kyoto'},
-  'ChIJTb-8AWoJAWARRnZGKmnbqgc': {lat:34.9976,lng:135.7797,name:'K36 Rooftop Bar',city:'Kyoto'},
-  'ChIJXSJB5UHnAGARQcEjvngsHaw': {lat:34.6654,lng:135.5062,name:'Kuromon Market',city:'Osaka'},
-  'ChIJg2DcJhXnAGARCbeAHoZrPeQ': {lat:34.6686,lng:135.5031,name:'Dotonbori',city:'Osaka'},
-  'ChIJz70hzbXnAGARDtfAnqJRUdI': {lat:34.6668,lng:135.5020,name:'Osaka Kanigin Namba',city:'Osaka'},
-  'ChIJE8YKbYz5AGARoCiDnK6410w': {lat:34.8538,lng:135.4720,name:'Minoh Falls',city:'Osaka'},
-  'ChIJtX8053n5AGARND16wXHGXg0': {lat:34.8658,lng:135.4911,name:'Katsuo-ji Temple',city:'Osaka'},
-  'ChIJF9AXoBznAGARi-T-JyJ_UEQ': {lat:34.6678,lng:135.5011,name:'Wagyu Idaten',city:'Osaka'},
-  'ChIJT6cViuCOAGARegX_ORkvbs0': {lat:34.7007,lng:135.1908,name:'Kitano Ijinkan',city:'Kobe'},
-  'ChIJfc-uOKqLGGAR-bVyIUWjtQo': {lat:35.6732,lng:139.7654,name:'MUJI Ginza',city:'Tokyo'},
-  'ChIJ-RETm8nzGGARIpEurSKyAYI': {lat:35.6612,lng:139.6683,name:'Shimokitazawa',city:'Tokyo'},
-  'ChIJr7mGZdmMGGARjxoMFeHApXE': {lat:35.6941,lng:139.7048,name:'Golden Gai',city:'Tokyo'},
-  'ChIJW2cLzSGLGGARXAKXv6EkbqI': {lat:35.6648,lng:139.7703,name:'Tsukiji Outer Market',city:'Tokyo'},
-  'ChIJGeu4VDWJGGARdPoda8d8I3A': {lat:35.6970,lng:139.7935,name:'Ryogoku Kokugikan',city:'Tokyo'},
-  'ChIJQZqLszyMGGAR_0fPsHLwL_Q': {lat:35.7066,lng:139.7624,name:'Jambo Hanare',city:'Tokyo'},
-  'ChIJZUTGW9GMGGAROJ7G4sU221Q': {lat:35.6895,lng:139.6966,name:'Bar Benfiddich',city:'Tokyo'},
-  'ChIJRZGCCOWLGGARTbuL5FrsFcM': {lat:35.6740,lng:139.7643,name:'Tendon Ginza Itsuki',city:'Tokyo'},
-};
+const LAND = {"type":"FeatureCollection","features":[{"type":"Feature","properties":{"name":"Taiwan"},"geometry":{"type":"MultiPolygon","coordinates":[[[[121.01,22.62],[120.95,22.5],[120.9,22.38],[120.88,22.26],[120.88,22.14],[120.86,22.03],[120.84,21.93],[120.74,21.96],[120.69,22.03],[120.68,22.16],[120.61,22.31],[120.58,22.36],[120.48,22.44],[120.39,22.48],[120.32,22.55],[120.33,22.54],[120.27,22.63],[120.23,22.72],[120.15,22.97],[120.12,23.04],[120.08,23.09],[120.07,23.15],[120.09,23.21],[120.12,23.31],[120.14,23.4],[120.13,23.53],[120.13,23.65],[120.16,23.71],[120.63,24.48],[120.76,24.64],[120.84,24.72],[120.9,24.81],[120.96,24.93],[121.04,25.03],[121.1,25.07],[121.37,25.16],[121.45,25.25],[121.52,25.28],[121.59,25.28],[121.64,25.23],[121.69,25.18],[121.73,25.15],[121.85,25.1],[121.91,25.06],[121.93,24.97],[121.86,24.9],[121.82,24.82],[121.81,24.75],[121.83,24.64],[121.83,24.53],[121.74,24.29],[121.64,24.13],[121.61,24.05],[121.58,23.86],[121.53,23.67],[121.48,23.42],[121.4,23.17],[121.35,23.07],[121.3,22.97],[121.16,22.78],[121.01,22.62]]]]}},{"type":"Feature","properties":{"name":"South Korea"},"geometry":{"type":"MultiPolygon","coordinates":[[[[126.63,37.78],[126.66,37.8],[126.67,37.83],[126.67,37.92],[126.75,37.98],[126.88,38.11],[126.94,38.18],[127.01,38.24],[127.09,38.28],[127.17,38.3],[127.29,38.31],[127.53,38.3],[127.58,38.31],[127.75,38.32],[127.78,38.31],[127.91,38.3],[128.04,38.31],[128.11,38.33],[128.17,38.36],[128.22,38.42],[128.28,38.52],[128.34,38.61],[128.37,38.62],[128.62,38.18],[128.85,37.89],[129.05,37.68],[129.34,37.27],[129.42,37.06],[129.43,36.93],[129.47,36.74],[129.43,36.64],[129.45,36.47],[129.43,36.39],[129.39,36.32],[129.39,36.2],[129.4,36.14],[129.4,36.05],[129.43,36.02],[129.46,36.01],[129.51,36.04],[129.57,36.05],[129.56,35.95],[129.49,35.69],[129.42,35.5],[129.33,35.33],[129.21,35.18],[129.08,35.12],[128.98,35.1],[128.8,35.09],[128.64,35.12],[128.51,35.1],[128.46,35.07],[128.42,35.02],[128.45,34.93],[128.44,34.87],[128.39,34.88],[128.28,34.91],[128.15,34.92],[128.09,34.93],[128.04,35.02],[127.98,35.02],[127.87,34.97],[127.71,34.95],[127.66,34.93],[127.64,34.89],[127.66,34.84],[127.74,34.78],[127.72,34.72],[127.63,34.69],[127.57,34.77],[127.52,34.84],[127.48,34.84],[127.4,34.82],[127.39,34.74],[127.42,34.69],[127.48,34.63],[127.4,34.55],[127.38,34.5],[127.32,34.46],[127.17,34.55],[127.19,34.61],[127.26,34.66],[127.27,34.72],[127.25,34.76],[127.03,34.61],[126.9,34.44],[126.83,34.45],[126.8,34.49],[126.75,34.51],[126.61,34.4],[126.58,34.32],[126.53,34.31],[126.51,34.35],[126.51,34.43],[126.48,34.49],[126.33,34.59],[126.26,34.67],[126.3,34.72],[126.43,34.69],[126.52,34.7],[126.5,34.74],[126.47,34.76],[126.54,34.78],[126.59,34.82],[126.55,34.84],[126.48,34.81],[126.42,34.82],[126.4,34.93],[126.33,35.05],[126.29,35.15],[126.36,35.22],[126.4,35.31],[126.46,35.46],[126.49,35.5],[126.58,35.53],[126.61,35.57],[126.56,35.59],[126.49,35.61],[126.49,35.65],[126.54,35.67],[126.6,35.71],[126.72,35.77],[126.75,35.87],[126.72,35.9],[126.65,35.92],[126.66,35.97],[126.69,36.01],[126.68,36.04],[126.6,36.11],[126.54,36.17],[126.56,36.24],[126.54,36.34],[126.55,36.43],[126.55,36.48],[126.51,36.59],[126.49,36.69],[126.43,36.68],[126.39,36.65],[126.23,36.69],[126.18,36.69],[126.16,36.77],[126.22,36.87],[126.35,36.96],[126.43,36.97],[126.49,37.01],[126.58,37.02],[126.69,36.96],[126.78,36.95],[126.84,36.85],[126.87,36.82],[126.88,36.86],[126.96,36.91],[126.98,36.94],[126.96,36.96],[126.87,36.98],[126.79,37.1],[126.78,37.16],[126.75,37.19],[126.79,37.29],[126.7,37.41],[126.65,37.45],[126.66,37.55],[126.61,37.62],[126.58,37.65],[126.56,37.72],[126.58,37.74],[126.62,37.76],[126.63,37.78]]],[[[128.74,34.8],[128.65,34.74],[128.52,34.82],[128.49,34.87],[128.59,34.93],[128.67,35.01],[128.72,35.01],[128.74,34.8]]],[[[128.07,34.81],[128.05,34.71],[127.98,34.7],[127.94,34.77],[127.9,34.74],[127.87,34.73],[127.84,34.81],[127.83,34.87],[127.92,34.92],[127.97,34.89],[128.04,34.88],[128.07,34.81]]],[[[126.23,34.37],[126.17,34.36],[126.13,34.39],[126.11,34.4],[126.12,34.44],[126.23,34.53],[126.25,34.56],[126.34,34.54],[126.38,34.5],[126.34,34.43],[126.23,34.37]]],[[[126.52,37.74],[126.52,37.6],[126.46,37.61],[126.42,37.62],[126.41,37.65],[126.37,37.77],[126.41,37.82],[126.49,37.78],[126.52,37.74]]],[[[126.17,34.73],[126.16,34.71],[126.12,34.71],[126.07,34.78],[126.05,34.84],[126.01,34.87],[126.08,34.91],[126.17,34.83],[126.17,34.73]]],[[[126.33,33.22],[126.28,33.2],[126.24,33.21],[126.23,33.23],[126.18,33.28],[126.17,33.31],[126.2,33.37],[126.34,33.46],[126.7,33.55],[126.76,33.55],[126.9,33.52],[126.93,33.44],[126.91,33.38],[126.87,33.34],[126.71,33.27],[126.58,33.24],[126.33,33.22]]]]}},{"type":"Feature","properties":{"name":"Japan"},"geometry":{"type":"MultiPolygon","coordinates":[[[[133.37,36.2],[133.32,36.17],[133.24,36.18],[133.19,36.23],[133.21,36.29],[133.3,36.34],[133.38,36.25],[133.37,36.2]]],[[[138.34,37.82],[138.25,37.82],[138.23,37.83],[138.28,37.85],[138.29,37.9],[138.32,37.97],[138.32,37.99],[138.25,37.99],[138.25,38.08],[138.31,38.16],[138.46,38.29],[138.5,38.32],[138.51,38.26],[138.46,38.12],[138.45,38.08],[138.58,38.07],[138.5,37.9],[138.34,37.82]]],[[[134.93,34.29],[134.82,34.2],[134.73,34.21],[134.68,34.25],[134.67,34.29],[134.76,34.37],[134.83,34.47],[134.9,34.52],[134.96,34.54],[135.0,34.54],[134.91,34.4],[134.93,34.29]]],[[[130.62,30.26],[130.51,30.24],[130.45,30.26],[130.39,30.39],[130.5,30.47],[130.64,30.39],[130.67,30.37],[130.62,30.26]]],[[[130.96,30.4],[130.87,30.39],[130.87,30.44],[130.94,30.58],[130.95,30.67],[131.01,30.79],[131.04,30.82],[131.06,30.83],[131.08,30.79],[131.06,30.64],[130.99,30.53],[130.96,30.4]]],[[[130.08,32.23],[130.0,32.19],[129.99,32.23],[129.96,32.24],[130.02,32.29],[130.02,32.31],[129.98,32.35],[130.02,32.47],[130.01,32.52],[130.17,32.54],[130.2,32.49],[130.2,32.34],[130.08,32.23]]],[[[129.28,34.12],[129.21,34.08],[129.19,34.15],[129.21,34.32],[129.34,34.28],[129.34,34.23],[129.28,34.12]]],[[[129.39,34.35],[129.37,34.31],[129.3,34.34],[129.27,34.37],[129.33,34.52],[129.32,34.58],[129.33,34.61],[129.45,34.69],[129.47,34.67],[129.48,34.65],[129.47,34.62],[129.48,34.54],[129.38,34.42],[129.39,34.35]]],[[[128.67,32.78],[128.7,32.76],[128.76,32.77],[128.81,32.78],[128.84,32.76],[128.88,32.69],[128.89,32.65],[128.82,32.65],[128.79,32.64],[128.75,32.59],[128.69,32.6],[128.66,32.63],[128.65,32.66],[128.67,32.78]]],[[[130.38,32.42],[130.29,32.42],[130.26,32.43],[130.24,32.46],[130.37,32.53],[130.46,32.52],[130.42,32.46],[130.38,32.42]]],[[[141.3,45.12],[141.23,45.11],[141.15,45.15],[141.14,45.21],[141.19,45.25],[141.25,45.23],[141.31,45.18],[141.33,45.15],[141.3,45.12]]],[[[139.48,42.08],[139.46,42.08],[139.43,42.08],[139.41,42.16],[139.43,42.2],[139.5,42.23],[139.56,42.24],[139.51,42.1],[139.48,42.08]]],[[[134.35,34.48],[134.33,34.46],[134.32,34.47],[134.25,34.42],[134.24,34.47],[134.19,34.5],[134.18,34.52],[134.33,34.53],[134.37,34.52],[134.35,34.48]]],[[[129.08,32.84],[129.05,32.83],[129.02,32.92],[129.0,32.95],[129.03,32.97],[129.11,33.13],[129.12,33.07],[129.15,33.0],[129.18,32.99],[129.15,32.95],[129.11,32.93],[129.08,32.84]]],[[[129.49,33.22],[129.42,33.18],[129.37,33.18],[129.42,33.23],[129.42,33.26],[129.46,33.33],[129.54,33.36],[129.57,33.36],[129.51,33.28],[129.49,33.22]]],[[[132.27,33.95],[132.31,33.91],[132.43,33.92],[132.44,33.91],[132.41,33.88],[132.36,33.85],[132.27,33.87],[132.21,33.87],[132.2,33.93],[132.21,33.95],[132.27,33.95]]],[[[143.82,44.12],[143.95,44.11],[144.01,44.12],[144.1,44.1],[144.48,43.95],[144.6,43.93],[144.72,43.93],[144.8,43.94],[144.87,43.98],[145.1,44.17],[145.34,44.33],[145.37,44.33],[145.37,44.28],[145.35,44.23],[145.25,44.08],[145.13,43.87],[145.1,43.76],[145.14,43.66],[145.21,43.58],[145.27,43.46],[145.34,43.3],[145.44,43.28],[145.49,43.28],[145.58,43.33],[145.67,43.39],[145.75,43.4],[145.83,43.39],[145.73,43.34],[145.62,43.29],[145.54,43.19],[145.51,43.17],[145.4,43.18],[145.35,43.18],[145.23,43.14],[145.13,43.09],[145.03,43.03],[144.92,43.0],[144.81,42.99],[144.63,42.95],[144.52,42.94],[144.3,42.98],[144.2,42.97],[143.97,42.88],[143.76,42.75],[143.58,42.6],[143.43,42.42],[143.37,42.33],[143.33,42.22],[143.33,42.15],[143.31,42.08],[143.28,42.04],[143.24,42.0],[143.11,42.02],[142.91,42.12],[142.51,42.26],[142.09,42.47],[141.85,42.58],[141.41,42.55],[140.99,42.34],[140.95,42.36],[140.79,42.5],[140.71,42.56],[140.62,42.57],[140.55,42.57],[140.48,42.56],[140.39,42.49],[140.35,42.44],[140.32,42.38],[140.32,42.33],[140.33,42.29],[140.42,42.2],[140.53,42.13],[140.58,42.12],[140.68,42.12],[140.73,42.12],[140.91,41.98],[141.11,41.85],[141.15,41.81],[141.08,41.76],[141.0,41.74],[140.91,41.74],[140.82,41.76],[140.66,41.82],[140.59,41.77],[140.49,41.67],[140.43,41.57],[140.38,41.52],[140.27,41.46],[140.15,41.42],[140.09,41.43],[140.04,41.47],[140.01,41.52],[140.0,41.58],[140.02,41.7],[140.08,41.8],[140.11,41.91],[140.06,42.07],[140.02,42.1],[139.9,42.19],[139.84,42.28],[139.82,42.39],[139.83,42.45],[139.86,42.58],[139.89,42.65],[139.95,42.67],[140.02,42.68],[140.11,42.73],[140.22,42.8],[140.33,42.87],[140.43,42.95],[140.49,43.05],[140.4,43.17],[140.38,43.24],[140.39,43.3],[140.49,43.34],[140.58,43.31],[140.78,43.21],[140.82,43.21],[140.95,43.2],[141.14,43.18],[141.25,43.19],[141.3,43.2],[141.37,43.28],[141.41,43.38],[141.4,43.51],[141.4,43.64],[141.45,43.75],[141.6,43.92],[141.64,44.02],[141.66,44.26],[141.72,44.37],[141.76,44.48],[141.78,44.72],[141.72,44.94],[141.66,45.05],[141.58,45.16],[141.59,45.26],[141.65,45.35],[141.65,45.38],[141.67,45.4],[141.78,45.42],[141.83,45.44],[141.88,45.48],[141.94,45.51],[141.98,45.48],[142.02,45.44],[142.17,45.33],[142.42,45.12],[142.7,44.82],[142.88,44.67],[143.08,44.53],[143.29,44.4],[143.51,44.28],[143.65,44.22],[143.76,44.13],[143.82,44.12]]],[[[131.17,33.6],[131.31,33.57],[131.37,33.57],[131.42,33.58],[131.5,33.62],[131.58,33.65],[131.64,33.64],[131.7,33.6],[131.72,33.55],[131.71,33.5],[131.62,33.39],[131.54,33.27],[131.72,33.25],[131.9,33.25],[131.85,33.18],[131.85,33.12],[131.9,33.09],[131.95,33.05],[131.94,33.01],[131.91,32.97],[132.01,32.92],[132.0,32.88],[131.98,32.84],[131.73,32.59],[131.66,32.47],[131.61,32.33],[131.56,32.22],[131.53,32.12],[131.51,32.0],[131.46,31.88],[131.48,31.78],[131.46,31.67],[131.34,31.4],[131.25,31.41],[131.14,31.44],[131.07,31.44],[131.04,31.38],[131.1,31.26],[130.9,31.11],[130.69,31.02],[130.68,31.06],[130.7,31.09],[130.74,31.12],[130.76,31.16],[130.79,31.27],[130.77,31.38],[130.71,31.53],[130.7,31.58],[130.75,31.6],[130.78,31.6],[130.8,31.62],[130.8,31.67],[130.78,31.71],[130.71,31.72],[130.66,31.72],[130.61,31.67],[130.56,31.56],[130.53,31.46],[130.54,31.4],[130.57,31.35],[130.64,31.27],[130.62,31.22],[130.59,31.18],[130.31,31.27],[130.25,31.27],[130.2,31.29],[130.15,31.41],[130.26,31.44],[130.29,31.45],[130.31,31.49],[130.32,31.6],[130.27,31.7],[130.22,31.73],[130.19,31.77],[130.21,31.85],[130.2,31.95],[130.19,32.09],[130.21,32.12],[130.32,32.14],[130.39,32.22],[130.46,32.3],[130.56,32.46],[130.64,32.62],[130.56,32.63],[130.5,32.66],[130.57,32.73],[130.55,32.83],[130.44,32.95],[130.38,33.09],[130.29,33.15],[130.24,33.18],[130.18,33.14],[130.13,33.1],[130.17,33.01],[130.17,32.93],[130.18,32.85],[130.22,32.85],[130.28,32.87],[130.33,32.85],[130.35,32.81],[130.36,32.76],[130.34,32.7],[130.3,32.67],[130.25,32.68],[130.19,32.71],[130.15,32.75],[130.05,32.77],[129.95,32.72],[129.85,32.62],[129.77,32.57],[129.81,32.65],[129.83,32.73],[129.79,32.78],[129.69,32.88],[129.67,32.93],[129.66,32.99],[129.68,33.06],[129.78,32.99],[129.83,32.89],[129.9,32.85],[129.99,32.85],[129.92,32.99],[129.9,33.02],[129.8,33.08],[129.67,33.19],[129.58,33.24],[129.61,33.34],[129.66,33.36],[129.7,33.36],[129.84,33.32],[129.86,33.38],[129.84,33.4],[129.83,33.44],[129.92,33.48],[130.07,33.52],[130.1,33.54],[130.13,33.58],[130.17,33.6],[130.28,33.6],[130.37,33.63],[130.44,33.73],[130.46,33.79],[130.48,33.83],[130.67,33.92],[130.72,33.93],[130.84,33.92],[130.95,33.87],[131.01,33.78],[131.06,33.67],[131.17,33.6]]],[[[134.36,34.26],[134.5,34.21],[134.64,34.23],[134.64,34.04],[134.66,33.98],[134.7,33.93],[134.67,33.85],[134.74,33.82],[134.55,33.73],[134.38,33.61],[134.31,33.53],[134.24,33.44],[134.21,33.35],[134.18,33.25],[134.12,33.29],[133.96,33.45],[133.85,33.49],[133.69,33.52],[133.63,33.51],[133.29,33.36],[133.24,33.25],[133.15,33.08],[133.1,33.03],[133.05,33.01],[133.02,32.98],[132.98,32.84],[132.87,32.75],[132.8,32.75],[132.69,32.78],[132.64,32.76],[132.71,32.9],[132.6,32.92],[132.5,32.92],[132.49,33.01],[132.43,33.06],[132.48,33.13],[132.48,33.18],[132.51,33.21],[132.52,33.26],[132.51,33.29],[132.45,33.3],[132.41,33.33],[132.41,33.43],[132.37,33.43],[132.28,33.42],[132.09,33.34],[132.03,33.34],[132.11,33.39],[132.29,33.47],[132.37,33.51],[132.54,33.63],[132.64,33.69],[132.7,33.79],[132.72,33.85],[132.75,33.91],[132.78,33.99],[132.84,34.02],[132.94,34.1],[132.99,34.09],[133.05,34.0],[133.13,33.93],[133.19,33.93],[133.3,33.97],[133.35,33.98],[133.47,33.97],[133.58,34.02],[133.63,34.07],[133.64,34.13],[133.6,34.24],[133.66,34.23],[133.71,34.24],[133.83,34.31],[133.95,34.35],[134.08,34.36],[134.22,34.32],[134.36,34.26]]],[[[141.23,41.37],[141.27,41.35],[141.46,41.4],[141.42,41.25],[141.4,41.1],[141.41,40.84],[141.43,40.72],[141.46,40.61],[141.54,40.53],[141.65,40.47],[141.8,40.29],[141.88,40.07],[141.94,39.96],[141.98,39.84],[141.99,39.79],[141.99,39.74],[141.98,39.67],[141.99,39.61],[141.98,39.43],[141.91,39.22],[141.9,39.11],[141.84,39.09],[141.81,39.04],[141.78,39.02],[141.74,39.0],[141.69,39.0],[141.66,38.97],[141.64,38.92],[141.62,38.87],[141.58,38.82],[141.55,38.76],[141.52,38.63],[141.51,38.5],[141.47,38.4],[141.37,38.38],[141.25,38.38],[141.11,38.34],[141.08,38.31],[140.96,38.15],[140.93,38.05],[140.93,37.95],[140.96,37.82],[141.0,37.7],[141.04,37.47],[141.0,37.11],[140.97,37.0],[140.9,36.93],[140.84,36.89],[140.79,36.85],[140.73,36.73],[140.63,36.5],[140.62,36.45],[140.62,36.39],[140.59,36.31],[140.57,36.23],[140.59,36.14],[140.62,36.06],[140.76,35.85],[140.81,35.78],[140.87,35.72],[140.64,35.66],[140.6,35.63],[140.46,35.51],[140.41,35.39],[140.42,35.27],[140.39,35.22],[140.35,35.18],[140.31,35.16],[140.16,35.1],[140.06,35.04],[139.96,34.95],[139.92,34.9],[139.84,34.91],[139.8,34.96],[139.84,35.01],[139.83,35.07],[139.85,35.23],[139.83,35.3],[139.91,35.35],[139.94,35.42],[140.03,35.49],[140.09,35.54],[140.1,35.59],[140.04,35.63],[139.99,35.67],[139.91,35.67],[139.83,35.66],[139.79,35.61],[139.77,35.55],[139.77,35.52],[139.77,35.49],[139.65,35.41],[139.67,35.32],[139.7,35.27],[139.74,35.25],[139.73,35.22],[139.68,35.15],[139.64,35.14],[139.56,35.24],[139.47,35.3],[139.36,35.3],[139.25,35.28],[139.16,35.21],[139.13,35.15],[139.12,35.1],[139.12,34.96],[139.09,34.84],[139.02,34.74],[138.98,34.7],[138.9,34.63],[138.84,34.62],[138.8,34.65],[138.76,34.7],[138.8,34.88],[138.8,34.97],[138.9,35.03],[138.82,35.1],[138.72,35.12],[138.58,35.09],[138.54,35.04],[138.51,34.99],[138.43,34.92],[138.35,34.85],[138.25,34.73],[138.19,34.6],[137.98,34.64],[137.86,34.65],[137.75,34.65],[137.54,34.66],[137.32,34.64],[137.06,34.58],[137.08,34.62],[137.29,34.7],[137.3,34.73],[137.28,34.77],[137.22,34.77],[137.1,34.76],[137.03,34.77],[137.01,34.81],[136.96,34.83],[136.93,34.82],[136.94,34.72],[136.91,34.71],[136.87,34.73],[136.88,34.81],[136.86,34.91],[136.85,34.98],[136.9,35.04],[136.85,35.06],[136.8,35.05],[136.74,35.02],[136.69,34.98],[136.58,34.79],[136.53,34.68],[136.62,34.59],[136.84,34.46],[136.88,34.43],[136.88,34.38],[136.85,34.32],[136.79,34.3],[136.54,34.26],[136.33,34.18],[136.27,34.09],[136.07,33.78],[135.92,33.56],[135.7,33.49],[135.45,33.55],[135.39,33.63],[135.35,33.72],[135.26,33.81],[135.18,33.9],[135.13,34.01],[135.14,34.18],[135.1,34.29],[135.13,34.32],[135.27,34.38],[135.31,34.42],[135.38,34.5],[135.41,34.55],[135.42,34.62],[135.36,34.65],[135.2,34.65],[135.04,34.63],[134.93,34.66],[134.78,34.75],[134.74,34.77],[134.58,34.77],[134.47,34.75],[134.36,34.72],[134.25,34.71],[134.21,34.7],[134.07,34.59],[133.97,34.53],[133.88,34.49],[133.68,34.49],[133.58,34.46],[133.47,34.43],[133.45,34.43],[133.34,34.39],[133.21,34.34],[133.14,34.3],[133.02,34.33],[132.77,34.26],[132.66,34.25],[132.53,34.29],[132.42,34.35],[132.31,34.32],[132.24,34.23],[132.2,34.03],[132.16,33.94],[132.15,33.84],[132.09,33.86],[131.76,34.05],[131.74,34.05],[131.48,34.02],[131.41,34.0],[131.32,33.97],[131.23,33.95],[131.15,33.98],[131.07,34.02],[131.0,34.01],[130.92,33.98],[130.89,34.26],[130.9,34.3],[130.95,34.35],[131.0,34.39],[131.13,34.41],[131.26,34.39],[131.35,34.41],[131.43,34.47],[131.52,34.55],[131.61,34.62],[131.73,34.67],[131.86,34.73],[131.96,34.81],[132.06,34.9],[132.16,34.97],[132.26,35.02],[132.41,35.16],[132.62,35.31],[132.7,35.42],[132.75,35.45],[132.92,35.51],[133.16,35.56],[133.27,35.56],[133.38,35.46],[133.44,35.47],[133.49,35.5],[133.62,35.51],[133.74,35.5],[133.86,35.49],[133.98,35.51],[134.21,35.54],[134.34,35.58],[134.46,35.63],[134.88,35.66],[135.17,35.75],[135.22,35.74],[135.27,35.72],[135.27,35.66],[135.23,35.59],[135.27,35.55],[135.33,35.53],[135.6,35.52],[135.68,35.5],[135.8,35.55],[135.9,35.61],[136.02,35.68],[136.1,35.77],[136.02,35.87],[136.01,35.99],[136.07,36.12],[136.16,36.22],[136.26,36.29],[136.36,36.36],[136.56,36.57],[136.7,36.74],[136.75,36.95],[136.72,37.2],[136.84,37.38],[136.96,37.41],[137.2,37.5],[137.32,37.52],[137.34,37.49],[137.34,37.44],[137.15,37.28],[137.05,37.22],[136.98,37.2],[136.92,37.17],[136.9,37.12],[136.99,37.03],[137.02,36.96],[137.01,36.9],[137.02,36.84],[137.12,36.77],[137.25,36.75],[137.3,36.75],[137.34,36.77],[137.48,36.92],[137.51,36.95],[137.91,37.06],[138.11,37.15],[138.22,37.17],[138.32,37.22],[138.55,37.39],[138.63,37.47],[138.71,37.56],[138.77,37.66],[138.82,37.77],[138.89,37.84],[139.25,38.01],[139.36,38.1],[139.4,38.14],[139.45,38.27],[139.48,38.4],[139.52,38.5],[139.58,38.6],[139.66,38.7],[139.75,38.79],[139.8,38.88],[139.88,39.1],[139.91,39.23],[139.94,39.27],[139.98,39.31],[140.01,39.36],[140.04,39.41],[140.05,39.46],[140.06,39.62],[140.05,39.75],[139.99,39.86],[139.95,39.89],[139.89,39.89],[139.81,39.88],[139.74,39.92],[139.76,39.96],[139.83,39.97],[139.87,39.99],[139.91,40.02],[139.97,40.14],[140.01,40.26],[140.01,40.31],[139.96,40.41],[139.92,40.53],[139.92,40.6],[139.97,40.67],[140.03,40.73],[140.09,40.75],[140.15,40.75],[140.2,40.77],[140.25,40.81],[140.28,40.85],[140.33,40.95],[140.34,41.01],[140.32,41.16],[140.34,41.2],[140.39,41.23],[140.44,41.21],[140.5,41.21],[140.56,41.21],[140.63,41.2],[140.64,41.16],[140.68,40.89],[140.7,40.86],[140.75,40.83],[140.8,40.83],[140.85,40.88],[140.88,40.93],[140.94,40.94],[141.12,40.88],[141.18,40.92],[141.23,40.99],[141.26,41.1],[141.24,41.21],[141.2,41.24],[141.16,41.24],[141.12,41.21],[141.07,41.19],[140.8,41.14],[140.8,41.25],[140.86,41.43],[140.89,41.48],[140.94,41.51],[141.05,41.48],[141.11,41.46],[141.23,41.37]]],[[[124.29,24.52],[124.23,24.36],[124.19,24.34],[124.14,24.35],[124.08,24.44],[124.12,24.47],[124.17,24.45],[124.21,24.46],[124.3,24.59],[124.32,24.57],[124.29,24.52]]],[[[123.89,24.28],[123.83,24.27],[123.75,24.28],[123.68,24.29],[123.68,24.32],[123.75,24.35],[123.75,24.39],[123.77,24.41],[123.93,24.36],[123.93,24.32],[123.89,24.28]]],[[[125.44,24.74],[125.36,24.72],[125.27,24.73],[125.28,24.87],[125.31,24.85],[125.33,24.8],[125.4,24.78],[125.44,24.74]]],[[[128.26,26.65],[128.16,26.61],[128.13,26.55],[128.04,26.53],[127.95,26.46],[127.87,26.44],[127.87,26.38],[127.9,26.33],[127.85,26.32],[127.79,26.26],[127.79,26.21],[127.81,26.17],[127.8,26.15],[127.73,26.1],[127.65,26.09],[127.65,26.15],[127.65,26.2],[127.73,26.31],[127.73,26.43],[127.8,26.45],[127.82,26.47],[127.93,26.56],[127.95,26.59],[127.89,26.63],[127.89,26.67],[127.91,26.69],[127.99,26.68],[128.03,26.65],[128.05,26.64],[128.1,26.67],[128.12,26.71],[128.22,26.8],[128.25,26.88],[128.33,26.81],[128.31,26.72],[128.26,26.65]]],[[[129.0,27.72],[128.96,27.7],[128.9,27.73],[128.88,27.84],[128.91,27.9],[128.95,27.91],[128.99,27.81],[129.02,27.77],[129.0,27.72]]],[[[129.45,28.21],[129.37,28.13],[129.27,28.2],[129.16,28.25],[129.22,28.26],[129.25,28.28],[129.25,28.31],[129.32,28.36],[129.46,28.4],[129.51,28.4],[129.56,28.43],[129.58,28.46],[129.6,28.48],[129.69,28.52],[129.71,28.47],[129.71,28.43],[129.64,28.41],[129.57,28.36],[129.51,28.3],[129.46,28.27],[129.44,28.25],[129.45,28.21]]]]}}]};
+const CATS = [
+  { id: "all",      label: "All" },
+  { id: "travel",   label: "Travel",   color: "#4a86c5" },
+  { id: "hotel",    label: "Hotels",   color: "#8b6fc9" },
+  { id: "food",     label: "Food",     color: "#d98a3d" },
+  { id: "activity", label: "Do",       color: "#4a9d5b" },
+  { id: "shop",     label: "Shop",     color: "#d2689a" },
+];
+const CAT_COLOR = { travel:"#4a86c5", hotel:"#8b6fc9", food:"#d98a3d", activity:"#4a9d5b", shop:"#d2689a", note:"#b6b4ae" };
+const REGIONS = { tokyo:[[35.676,139.760],12], kyoto:[[35.010,135.778],11], osaka:[[34.677,135.510],13], taipei:[[25.069,121.221],13] };
+let activeFilter = "all";
+let sc = 0;
 
-const CITY_COLORS = {Tokyo:'#1a5580',Hakone:'#1a5c35',Kyoto:'#4a3899',Uji:'#6b3580',Osaka:'#8a3018',Kobe:'#7a2545'};
-const CAT_EMOJI = {eat:'🍜',drink:'☕',do:'📍',shop:'🛍',stay:'🏨',bar:'🍸',travel:'✈'};
+/* assign a stable marker id to every slot that has coordinates */
+let _midSeq = 0;
+DAYS.forEach(d => d.slots.forEach(s => { if (s.ll) s._mid = "p" + (++_midSeq); }));
 
-// ── Init map ─────────────────────────────────────────────────────────────
-const map = L.map('map', {center:[35.3,136.2],zoom:6,zoomControl:true});
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
-  attribution:'© OpenStreetMap © CARTO',subdomains:'abcd',maxZoom:19
-}).addTo(map);
-
-function makeIcon(city) {
-  const color = CITY_COLORS[city]||'#555';
-  return L.divIcon({
-    className:'',
-    html:`<div style="width:24px;height:24px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${color};border:2px solid rgba(255,255,255,0.95);box-shadow:0 2px 7px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center"><span style="transform:rotate(45deg);font-size:9px">📍</span></div>`,
-    iconSize:[24,24],iconAnchor:[12,24],popupAnchor:[0,-26],
-  });
-}
-
-// Add all markers
-const markers = {};
-Object.entries(PLACE_DATA).forEach(([pid, p]) => {
-  const color = CITY_COLORS[p.city]||'#555';
-  const m = L.marker([p.lat,p.lng],{icon:makeIcon(p.city)});
-  m.bindPopup(`<div class="popup-inner"><div class="popup-city">${p.city}</div><div class="popup-name">${p.name}</div><a class="popup-maps" href="https://www.google.com/maps/place/?q=place_id:${pid}" target="_blank">📍 Google Maps</a></div>`,{maxWidth:220,closeButton:false});
-  m.addTo(map);
-  markers[pid] = m;
-});
-
-// ── Map toggle ───────────────────────────────────────────────────────────
-let mapVisible = true;
-function toggleMap() {
-  mapVisible = !mapVisible;
-  const panel = document.getElementById('mapPanel');
-  const btn = document.getElementById('mapToggleBtn');
-  panel.classList.toggle('hidden', !mapVisible);
-  btn.classList.toggle('on', mapVisible);
-  if (mapVisible) setTimeout(()=>map.invalidateSize(),260);
-}
-
-// ── Fly to pin ───────────────────────────────────────────────────────────
-let activeSlotEl = null;
-function flyTo(pid, slotEl) {
-  if (!PLACE_DATA[pid]) return;
-  if (!mapVisible) toggleMap();
-  if (activeSlotEl) activeSlotEl.classList.remove('map-active');
-  slotEl.classList.add('map-active');
-  activeSlotEl = slotEl;
-  const p = PLACE_DATA[pid];
-  map.flyTo([p.lat, p.lng], 15, {duration:0.8});
-  setTimeout(()=>{ if(markers[pid]) markers[pid].openPopup(); }, 850);
-}
-
-// ── Render schedule ──────────────────────────────────────────────────────
-function toggleDetail(id) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  const isOpen = el.classList.contains('open');
-  // Close all open detail panels
-  document.querySelectorAll('.slot-detail.open').forEach(d => d.classList.remove('open'));
-  document.querySelectorAll('.slot.detail-active').forEach(s => s.classList.remove('detail-active'));
-  // Open this one if it was closed
-  if (!isOpen) {
-    el.classList.add('open');
-    el.closest('.slot').classList.add('detail-active');
-  }
-}
-function badgeClass(city){return {tokyo:'b-tokyo',kyoto:'b-kyoto',osaka:'b-osaka',kobe:'b-kobe',hakone:'b-hakone',travel:'b-travel'}[city]||'b-travel';}
-function badgeLabel(city){return {tokyo:'Tokyo',kyoto:'Kyoto',osaka:'Osaka',kobe:'Kobe',hakone:'Hakone',travel:'Travel'}[city]||city;}
+/* ---------- HELPERS ---------- */
+function stripTags(html){ const d=document.createElement("div"); d.innerHTML=html; return (d.textContent||"").replace(/^Check in:\s*/,""); }
 function tagHtml(tags){
-  if(!tags||!tags.length) return '';
-  const map2={must:'★ must',book:'📅 book',early:'🌅 early',group:'👥 group'};
-  const cls={must:'t-must',book:'t-book',early:'t-early',group:'t-group'};
-  return '<span class="tags">'+tags.map(t=>`<span class="tag ${cls[t]||'t-must'}">${map2[t]||t}</span>`).join('')+'</span>';
+  if(!tags) return "";
+  return tags.map(t=>{
+    if(typeof t==="string"){
+      if(t==="booked") return '<span class="tag tag-booked">booked</span>';
+      if(t==="tobook") return '<span class="tag tag-tobook">to book</span>';
+      return '<span class="tag tag-plain">'+t+'</span>';
+    }
+    return '<span class="tag tag-'+(t.c||'plain')+'">'+t.t+'</span>';
+  }).join("");
+}
+function mapUrl(s){
+  if(s.pid) return "https://www.google.com/maps/place/?q=place_id:"+s.pid;
+  if(s.q)   return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(s.q);
+  return null;
 }
 
-let currentFilter='all';
-let slotCounter=0;
-
+/* ---------- RENDER LIST ---------- */
+function slotHtml(s){
+  sc++;
+  const detId="det-"+sc;
+  const url=mapUrl(s);
+  const hasMarker=!!s.ll;
+  const hasMap=hasMarker||!!url;
+  let clickAttr="", midAttr="";
+  if(hasMarker){ clickAttr=` onclick="flyToSlot('${s._mid}')"`; midAttr=' data-mid="'+s._mid+'"'; }
+  else if(url){ clickAttr=` onclick="openMap('${url}')"`; }
+  const pin=hasMap?'<span class="slot-pin">📍</span>':"";
+  const price=s.price?'<span class="slot-price">'+s.price+'</span>':"";
+  const dur=s.dur?'<span class="slot-dur">⏱ '+s.dur+'</span>':"";
+  const note=s.note?'<div class="slot-note">'+s.note+'</div>':"";
+  const detToggle=s.detail?'<button class="det-toggle" onclick="event.stopPropagation();toggleDetail(this,\''+detId+'\')" aria-label="Toggle details">▾</button>':"";
+  const detailBlock=s.detail?'<div class="slot-detail" id="'+detId+'">'+s.detail+'</div>':"";
+  return '<div class="slot'+(hasMap?' mappable':'')+'" data-cat="'+s.d+'"'+midAttr+clickAttr+'>'
+    +'<span class="slot-time">'+(s.t||"")+'</span>'
+    +'<div class="dot d-'+s.d+'"></div>'
+    +'<div class="slot-body"><div class="slot-row"><span class="slot-text">'+s.text+'</span>'+dur+price+tagHtml(s.tags)+pin+detToggle+'</div>'+note+detailBlock+'</div>'
+    +'</div>';
+}
+function dayHtml(day, idx){
+  const slots=day.slots.length?day.slots.map(slotHtml).join(""):'<div class="empty-slot">Nothing planned yet</div>';
+  const count=day.slots.length?day.slots.length+(day.slots.length===1?" item":" items"):"open";
+  return '<div class="day" data-day="'+idx+'">'
+    +'<div class="day-head" onclick="toggleDay('+idx+')"><span class="day-date">'+day.date+'</span><span class="day-label">'+day.label+'</span><span class="day-count">'+count+'</span><span class="chev">▼</span></div>'
+    +'<div class="slots">'+slots+'</div></div>';
+}
 function render(){
-  const container=document.getElementById('days');
-  container.innerHTML='';
-  slotCounter=0;
-  D.forEach((day,i)=>{
-    if(currentFilter!=='all'&&day.city!==currentFilter) return;
-    const div=document.createElement('div');
-    div.className='day';
-    const slotsHtml=day.slots.map(s=>{
-      const sc=slotCounter++;
-      const hasPid=!!s.pid&&!!PLACE_DATA[s.pid];
-      const clickAttr=hasPid?`onclick="flyTo('${s.pid}',document.getElementById('sc${sc}'))"`:'' ;
-      const detId = 'det-' + sc;
-      const hasDetail = !!s.detail;
-      const slotClick = hasPid && hasDetail
-        ? `onclick="flyTo('${s.pid}',this);toggleDetail('${detId}')"`
-        : hasPid
-          ? `onclick="flyTo('${s.pid}',this)"`
-          : hasDetail
-            ? `onclick="event.stopPropagation();toggleDetail('${detId}')"`
-            : '';
-      return `<div class="slot${hasPid?' mappable':''}${hasDetail?' has-detail':''}" id="sc${sc}" ${slotClick}>
-  <span class="slot-time">${s.t}</span>
-  <div class="dot d-${s.d}"></div>
-  <div class="slot-body">
-    <div class="slot-row">
-      <span class="slot-text">${s.text}</span>
-      ${s.price?`<span class="slot-price">💴 ${s.price}</span>`:''}
-      ${tagHtml(s.tags)}
-      ${hasPid?'<span class="slot-pin">📍</span>':''}
-    </div>
-    ${s.note?`<div class="slot-note">${s.note}</div>`:''}
-    ${hasDetail?`<div class="slot-detail" id="${detId}">${s.detail}</div>`:''}
-  </div>
-</div>`;
-    }).join('');
-    div.innerHTML=`
-<div class="day-hdr" onclick="toggle(${i})">
-  <span class="city-badge ${badgeClass(day.city)}">${badgeLabel(day.city)}</span>
-  <span class="day-title">${day.label}</span>
-  <div class="day-right">
-    ${day.est?`<span class="day-cost">${day.est}</span>`:''}
-    <span class="day-date">${day.date}</span>
-    <span class="chev" id="chev-${i}">▼</span>
-  </div>
-</div>
-<div class="day-body" id="body-${i}">
-  ${day.note?`<div class="day-note">${day.note}</div>`:''}
-  <div class="slots">${slotsHtml}</div>
-</div>`;
-    container.appendChild(div);
+  sc=0;
+  document.getElementById("days").innerHTML=DAYS.map(dayHtml).join("");
+  document.getElementById("filters").innerHTML=CATS.map(c=>{
+    const dot=c.color?'<span class="f-dot" style="background:'+c.color+'"></span>':"";
+    return '<button class="f-btn'+(activeFilter===c.id?' active':'')+'" onclick="setFilter(\''+c.id+'\')">'+dot+c.label+'</button>';
+  }).join("");
+  applyFilter();
+}
+function applyFilter(){
+  document.querySelectorAll(".day").forEach(dayEl=>{
+    let visible=0;
+    dayEl.querySelectorAll(".slot").forEach(slot=>{
+      const show=activeFilter==="all"||slot.dataset.cat===activeFilter;
+      slot.classList.toggle("hidden-by-filter",!show);
+      if(show) visible++;
+    });
+    const isEmptyDay=!!dayEl.querySelector(".empty-slot");
+    dayEl.classList.toggle("empty-by-filter", activeFilter!=="all" && (visible===0));
+    if(isEmptyDay && activeFilter!=="all") dayEl.classList.add("empty-by-filter");
   });
 }
 
-function toggle(i){
-  const b=document.getElementById('body-'+i);
-  const c=document.getElementById('chev-'+i);
-  if(!b)return;
-  b.classList.toggle('open');
-  if(c)c.classList.toggle('open');
+/* ---------- MAP ---------- */
+let map=null, markerLayer=null, markers={};
+function collectPlaces(){
+  const out=[];
+  DAYS.forEach(day=>day.slots.forEach(s=>{ if(s.ll){ out.push({mid:s._mid, name:stripTags(s.text), cat:s.d, ll:s.ll, pid:s.pid, q:s.q, region:s.region, date:day.date}); }}));
+  return out;
 }
+function markerIcon(cat){
+  const c=CAT_COLOR[cat]||"#888";
+  return L.divIcon({className:"", iconSize:[16,16], iconAnchor:[8,8],
+    html:'<div style="width:14px;height:14px;border-radius:50%;background:'+c+';box-shadow:0 0 0 2px #fff,0 1px 3px rgba(0,0,0,.45)"></div>'});
+}
+function refreshMarkers(){
+  if(!map||!markerLayer) return;
+  markerLayer.clearLayers(); markers={};
+  const places=collectPlaces().filter(p=>activeFilter==="all"||p.cat===activeFilter);
+  const japanBounds=[];
+  places.forEach(p=>{
+    const url=p.pid?"https://www.google.com/maps/place/?q=place_id:"+p.pid:(p.q?"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(p.q):null);
+    const m=L.marker(p.ll,{icon:markerIcon(p.cat)});
+    m.bindTooltip(p.name,{direction:"top", offset:[0,-7], opacity:0.95});
+    m.bindPopup('<b>'+p.name+'</b><br><span style="color:#999">'+p.date+'</span>'+(url?'<br><a href="'+url+'" target="_blank" rel="noopener">Open in Maps ↗</a>':''),{closeButton:false});
+    m.addTo(markerLayer);
+    markers[p.mid]=m;
+    if(p.region!=="taipei") japanBounds.push(p.ll);
+  });
+  if(japanBounds.length) map.fitBounds(japanBounds,{padding:[34,34],maxZoom:12});
+}
+function initMap(){
+  map=L.map("map",{zoomControl:true, scrollWheelZoom:true}).setView([35.5,137.0],5);
 
-function filter(city,btn){
-  currentFilter=city;
-  document.querySelectorAll('.f-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  render();
+  // Vector land basemap drawn from embedded data -> always renders, no network needed
+  map.createPane("landpane"); map.getPane("landpane").style.zIndex=150;
+  L.geoJSON(LAND,{pane:"landpane", interactive:false,
+    style:{fillColor:"#eceae3", fillOpacity:1, color:"#d8d5cc", weight:1}}).addTo(map);
+
+  // Faint English region labels for orientation
+  const labelPane="labelpane"; map.createPane(labelPane); map.getPane(labelPane).style.zIndex=350;
+  [["Tokyo",35.62,139.95],["Kyoto",35.28,135.62],["Osaka",34.45,135.42],["Taipei",24.92,121.42]].forEach(([nm,la,ln])=>{
+    L.marker([la,ln],{pane:labelPane, interactive:false,
+      icon:L.divIcon({className:"", iconSize:[80,16],
+        html:'<span style="font-size:11px;color:#9a978e;font-weight:600;letter-spacing:.3px;white-space:nowrap">'+nm+'</span>'})}).addTo(map);
+  });
+
+  // Street tiles on top for full detail when opened in a browser (gracefully absent in sandbox preview)
+  const base=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+    {maxZoom:19, attribution:"Tiles \u00a9 Esri"});
+  let switched=false;
+  base.on("tileerror", function(){
+    if(switched) return; switched=true;
+    map.removeLayer(base);
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+      {subdomains:"abcd", maxZoom:19, attribution:"\u00a9 OpenStreetMap \u00a9 CARTO"}).addTo(map);
+  });
+  base.addTo(map);
+
+  markerLayer=L.layerGroup().addTo(map);
+  refreshMarkers();
 }
+function whenLeaflet(cb,n){ n=n||0; if(window.L){cb();} else if(n<60){ setTimeout(()=>whenLeaflet(cb,n+1),100);} }
+
+/* ---------- INTERACTION ---------- */
+function setFilter(id){
+  activeFilter=id;
+  document.querySelectorAll(".f-btn").forEach(b=>b.classList.remove("active"));
+  if(typeof event!=="undefined"&&event.currentTarget) event.currentTarget.classList.add("active");
+  applyFilter();
+  refreshMarkers();
+}
+function toggleDay(idx){ document.querySelector('.day[data-day="'+idx+'"]').classList.toggle("collapsed"); }
+function toggleDetail(btn,id){ const el=document.getElementById(id); const open=el.classList.toggle("open"); btn.classList.toggle("open",open); }
+function openMap(url){ window.open(url,"_blank","noopener"); }
+function setMapW(v){
+  document.documentElement.style.setProperty("--mapw", v+"vw");
+  if(map) setTimeout(()=>map.invalidateSize(),30);
+}
+function flyToSlot(mid){ _fly(mid); }
+function _fly(mid){
+  const m=markers[mid];
+  document.querySelectorAll(".slot.map-active").forEach(e=>e.classList.remove("map-active"));
+  const el=document.querySelector('.slot[data-mid="'+mid+'"]'); if(el) el.classList.add("map-active");
+  if(!map||!m) return;
+  map.flyTo(m.getLatLng(), 15, {duration:0.8});
+  setTimeout(()=>m.openPopup(), 820);
+}
+function flyTo(r){ if(!map) return; const [c,z]=REGIONS[r]; map.setView(c,z); }
 
 render();
-setTimeout(()=>{
-  const b=document.getElementById('body-0');
-  const c=document.getElementById('chev-0');
-  if(b){b.classList.add('open');}
-  if(c){c.classList.add('open');}
-},50);
+whenLeaflet(initMap);
 </script>
 </body>
 </html>
