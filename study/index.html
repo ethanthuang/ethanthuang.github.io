@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Study</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f7f6f3; color: #1a1a18; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
@@ -17,6 +18,14 @@
   .crumb { font-size: 13px; color: #888; }
   .crumb a { color: #ccc; text-decoration: none; }
   .crumb a:hover { color: #fff; }
+  .sync-pill { margin-left: auto; font: inherit; font-size: 11px; padding: 3px 10px; border-radius: 20px; background: #2e2e2c; color: #ccc; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .sync-pill[hidden] { display: none; }
+  .sync-pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #888; }
+  .sync-pill.ok { background: #16331f; color: #6dbd6d; }
+  .sync-pill.ok::before { background: #6dbd6d; }
+  .sync-pill.syncing::before { background: #d9b44a; }
+  .sync-pill.error { background: #3a1c1a; color: #e08a80; }
+  .sync-pill.error::before { background: #e08a80; }
 
   /* Layout */
   .main { max-width: 760px; margin: 0 auto; padding: 16px 16px 60px; display: flex; flex-direction: column; gap: 9px; }
@@ -117,6 +126,7 @@
   <div class="header"><div class="header-in">
     <h1><a href="#/">Study</a></h1>
     <span class="crumb" id="crumb"></span>
+    <button class="sync-pill" id="syncPill" hidden></button>
   </div></div>
   <div class="main" id="app"></div>
   <input type="file" id="importFile" accept="application/json,.json" hidden>
@@ -140,15 +150,40 @@ function load() {
     const s = localStorage.getItem(KEY);
     if (s) {
       const d = JSON.parse(s);
-      if (d && Array.isArray(d.decks) && Array.isArray(d.cards)) return d;
+      if (d && Array.isArray(d.decks) && Array.isArray(d.cards)) {
+        // every deck/card carries u = last-modified time, used to resolve sync conflicts
+        for (const x of [...d.decks, ...d.cards]) if (!x.u) x.u = x.created || 1;
+        return d;
+      }
     }
   } catch (e) {}
   return { decks: [], cards: [] };
 }
-function save() {
+function save(push = true) {
   try { localStorage.setItem(KEY, JSON.stringify(db)); }
   catch (e) { toast('Could not save. Browser storage is unavailable.'); }
+  saveMeta();
+  if (push) schedulePush();
 }
+
+// Sync bookkeeping, kept apart from db so exports stay clean.
+// dirty: ids changed locally and not yet pushed; deleted: tombstones { id: { kind, u } }
+const SYNC_KEY = 'study.sync';
+let meta = loadMeta();
+function loadMeta() {
+  try {
+    const m = JSON.parse(localStorage.getItem(SYNC_KEY));
+    if (m) return { dirty: new Set(m.dirty || []), deleted: m.deleted || {}, last: m.last || 0, userId: m.userId || null };
+  } catch (e) {}
+  return { dirty: new Set(), deleted: {}, last: 0, userId: null };
+}
+function saveMeta() {
+  try { localStorage.setItem(SYNC_KEY, JSON.stringify({ ...meta, dirty: [...meta.dirty] })); } catch (e) {}
+}
+// Mark a deck/card as changed now
+function touch(o) { o.u = Date.now(); meta.dirty.add(o.id); delete meta.deleted[o.id]; return o; }
+// Record a deletion so it propagates to other devices
+function tomb(kind, id) { meta.deleted[id] = { kind, u: Date.now() }; meta.dirty.add(id); }
 
 /* ------------------------------------------------------------------ *
  * Helpers
@@ -293,7 +328,7 @@ function cntCell(n, cls) { return `<span class="cnt ${cls}${n ? '' : ' zero'}">$
 function renderHome() {
   $('#crumb').innerHTML = '';
   document.title = 'Study';
-  const rows = db.decks.map(d => {
+  const rows = [...db.decks].sort((a, b) => (a.created || 0) - (b.created || 0)).map(d => {
     const k = counts(d);
     return `<a class="deck-row" href="#/deck/${d.id}"><span class="deck-name">${esc(d.name)}</span>${cntCell(k.new, 'new')}${cntCell(k.learn, 'learn')}${cntCell(k.review, 'due')}</a>`;
   }).join('');
@@ -309,9 +344,10 @@ function renderHome() {
         <button class="btn primary">Create deck</button>
       </form>
     </div>
+    ${syncCardHtml()}
     <div class="card">
       <h2>Backup</h2>
-      <p class="muted" style="margin-bottom:10px">Cards are saved in this browser only. Export regularly to back up or move to another device.</p>
+      <p class="muted" style="margin-bottom:10px">${user ? 'Download a copy of all your decks as a file.' : 'Cards are saved in this browser only. Export regularly to back up or move to another device.'}</p>
       <div class="row">
         <button class="btn" data-act="export">Export all</button>
         <button class="btn" data-act="import">Import…</button>
@@ -458,8 +494,9 @@ function answer(grade) {
   if (prev.state === 'new') {
     const t = todayKey();
     d.newToday = { date: t, count: (d.newToday && d.newToday.date === t ? d.newToday.count : 0) + 1 };
+    touch(d);
   }
-  db.cards[i] = schedule(prev, grade);
+  db.cards[i] = touch(schedule(prev, grade));
   save();
   s.cardId = null; s.revealed = false;
   render();
@@ -469,8 +506,8 @@ function undo() {
   const s = ui.study; if (!s || !s.undo) return;
   const d = deckById(s.deck), u = s.undo;
   const i = db.cards.findIndex(x => x.id === u.card.id);
-  if (i >= 0) db.cards[i] = u.card;
-  if (d) d.newToday = u.newToday;
+  if (i >= 0) db.cards[i] = touch({ ...u.card });
+  if (d) { d.newToday = u.newToday; touch(d); }
   save();
   s.undo = null; s.cardId = u.card.id; s.revealed = true;
   render();
@@ -492,6 +529,7 @@ function importData(data) {
     if (!d || !d.id || !d.name) continue;
     const deck = { newPerDay: 20, ...d };
     const i = db.decks.findIndex(x => x.id === d.id);
+    touch(deck);
     if (i >= 0) db.decks[i] = deck; else db.decks.push(deck);
     nd++;
   }
@@ -499,6 +537,7 @@ function importData(data) {
     if (!c || !c.id || !c.deck || typeof c.front !== 'string') continue;
     const card = { ...newCard(c.deck, c.front, c.back || ''), ...c };
     const i = db.cards.findIndex(x => x.id === c.id);
+    touch(card);
     if (i >= 0) db.cards[i] = card; else db.cards.push(card);
     nc++;
   }
@@ -516,6 +555,8 @@ const actions = {
   'delete-deck'() {
     const d = deckById(route().id);
     if (!confirm(`Delete “${d.name}” and its ${cardsOf(d.id).length} cards? This can’t be undone.`)) return;
+    cardsOf(d.id).forEach(c => tomb('card', c.id));
+    tomb('deck', d.id);
     db.decks = db.decks.filter(x => x.id !== d.id);
     db.cards = db.cards.filter(c => c.deck !== d.id);
     save(); location.hash = '#/';
@@ -524,6 +565,7 @@ const actions = {
   'cancel-edit'() { ui.editing = null; renderCardList(deckById(route().id)); },
   'delete-card'(el) {
     if (!confirm('Delete this card?')) return;
+    tomb('card', el.dataset.id);
     db.cards = db.cards.filter(c => c.id !== el.dataset.id);
     save(); render();
   },
@@ -531,7 +573,7 @@ const actions = {
     if (!confirm('Reset this card’s progress? It will become a new card again.')) return;
     const i = db.cards.findIndex(c => c.id === el.dataset.id);
     const c = db.cards[i];
-    db.cards[i] = { ...newCard(c.deck, c.front, c.back, c.created), id: c.id };
+    db.cards[i] = touch({ ...newCard(c.deck, c.front, c.back, c.created), id: c.id });
     ui.editing = null; save(); render();
   },
   'edit-current'() {
@@ -541,19 +583,29 @@ const actions = {
   reveal() { if (ui.study) { ui.study.revealed = true; render(); } },
   grade(el) { answer(+el.dataset.g); },
   undo,
+  'sync-now'() { sync(true); },
+  async signout() {
+    await sync(false);
+    const pending = meta.dirty.size;
+    const wipe = !pending && confirm('Also remove your cards from this device? They stay safe in your account.');
+    await sb.auth.signOut();
+    if (wipe) { db = { decks: [], cards: [] }; meta = { dirty: new Set(), deleted: {}, last: 0, userId: null }; save(false); }
+    else if (pending) toast('Some changes haven’t synced yet, so they were kept on this device.');
+    render();
+  },
 };
 
 const forms = {
   newdeck(f) {
     const name = f.name.value.trim(); if (!name) return;
     const d = { id: uid(), name, newPerDay: 20, created: Date.now(), newToday: null };
-    db.decks.push(d); save();
+    db.decks.push(touch(d)); save();
     location.hash = '#/deck/' + d.id;
   },
   addcard(f) {
     const front = f.front.value.trim(), back = f.back.value.trim();
     if (!front || !back) return;
-    db.cards.push(newCard(route().id, front, back)); save();
+    db.cards.push(touch(newCard(route().id, front, back))); save();
     render(); toast('Card added');
     $('form[data-form=addcard] textarea').focus();
   },
@@ -565,7 +617,7 @@ const forms = {
       const parts = line.includes('\t') ? line.split('\t') : line.split('::');
       const front = (parts[0] || '').trim(), back = parts.slice(1).join(' ').trim();
       if (!front || !back) { skipped++; return; }
-      db.cards.push(newCard(deck, front, back, t0 + n++));
+      db.cards.push(touch(newCard(deck, front, back, t0 + n++)));
     });
     save(); render();
     toast(`Added ${n} card${n === 1 ? '' : 's'}${skipped ? ` · skipped ${skipped} line${skipped === 1 ? '' : 's'}` : ''}`);
@@ -574,16 +626,199 @@ const forms = {
     const c = db.cards.find(x => x.id === f.dataset.id);
     const front = f.front.value.trim(), back = f.back.value.trim();
     if (!c || !front || !back) return;
-    c.front = front; c.back = back; ui.editing = null;
+    c.front = front; c.back = back; touch(c); ui.editing = null;
     save(); renderCardList(deckById(route().id)); toast('Saved');
+  },
+  async signin(f) {
+    const btn = f.querySelector('button'); btn.disabled = true;
+    const { error } = await sb.auth.signInWithPassword({ email: f.email.value.trim(), password: f.password.value });
+    btn.disabled = false;
+    if (error) toast(error.message);
   },
   settings(f) {
     const d = deckById(route().id);
     d.name = f.name.value.trim() || d.name;
     d.newPerDay = Math.max(0, Math.min(9999, parseInt(f.newPerDay.value, 10) || 0));
+    touch(d);
     save(); render(); toast('Settings saved');
   },
 };
+
+/* ------------------------------------------------------------------ *
+ * Sync (Supabase)
+ * Each deck/card is one row in study_items. Local copy is the source for the UI;
+ * changes are pushed in the background and the newest version (by u) wins.
+ * Schema and policies: study/supabase.sql
+ * ------------------------------------------------------------------ */
+const SUPABASE_URL = '';  // e.g. 'https://abcdefgh.supabase.co'
+const SUPABASE_KEY = '';  // anon / publishable key: safe to publish, rows are protected by row level security
+
+const sb = SUPABASE_URL && SUPABASE_KEY && window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+let user = null, syncState = sb ? 'signedout' : 'off', syncErr = '';
+let syncing = false, syncQueued = null, pushTimer;
+
+function setSync(state, err = '') {
+  syncState = state; syncErr = err;
+  const p = $('#syncPill');
+  const label = { signedout: 'Not synced', syncing: 'Syncing…', ok: 'Synced', offline: 'Offline', error: 'Sync error' }[state];
+  p.hidden = !label;
+  p.textContent = label || '';
+  p.className = 'sync-pill ' + state;
+  p.title = state === 'error' ? err : state === 'ok' && meta.last ? 'Last synced ' + new Date(meta.last).toLocaleTimeString() : '';
+  const info = $('#syncInfo');
+  if (info) info.innerHTML = syncInfoHtml();
+}
+
+function schedulePush() {
+  if (!user) return;
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(() => sync(false), 1500);
+}
+
+function rowFor(id, dmap, cmap) {
+  const t = meta.deleted[id];
+  if (t) return { id, kind: t.kind, data: null, updated_at: t.u, deleted: true };
+  const d = dmap.get(id);
+  if (d) return { id, kind: 'deck', data: d, updated_at: d.u, deleted: false };
+  const c = cmap.get(id);
+  if (c) return { id, kind: 'card', data: c, updated_at: c.u, deleted: false };
+  return null;
+}
+
+async function push() {
+  if (!meta.dirty.size) return;
+  const maps = () => [new Map(db.decks.map(d => [d.id, d])), new Map(db.cards.map(c => [c.id, c]))];
+  let [dmap, cmap] = maps();
+  const ids = [...meta.dirty];
+  const rows = ids.map(id => rowFor(id, dmap, cmap)).filter(Boolean);
+  for (let i = 0; i < rows.length; i += 500) {
+    // study_push only overwrites a row if ours is newer
+    const { error } = await sb.rpc('study_push', { items: rows.slice(i, i + 500) });
+    if (error) throw error;
+  }
+  // Keep anything that changed again while we were pushing
+  [dmap, cmap] = maps();
+  const sent = new Map(rows.map(r => [r.id, r.updated_at]));
+  for (const id of ids) {
+    const now = rowFor(id, dmap, cmap);
+    if (!now || now.updated_at === sent.get(id)) meta.dirty.delete(id);
+  }
+}
+
+// Fetch everything and merge. Returns true if local data changed.
+async function pull() {
+  const rows = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await sb.from('study_items').select('id,kind,data,updated_at,deleted').order('id').range(from, from + 999);
+    if (error) throw error;
+    rows.push(...data);
+    if (data.length < 1000) break;
+  }
+  const dmap = new Map(db.decks.map(d => [d.id, d])), cmap = new Map(db.cards.map(c => [c.id, c]));
+  const version = id => meta.deleted[id] ? meta.deleted[id].u : (dmap.get(id) || cmap.get(id) || { u: 0 }).u;
+  const seen = new Set();
+  let changed = false;
+  for (const r of rows) {
+    seen.add(r.id);
+    const remote = Number(r.updated_at), local = version(r.id);
+    if (remote > local) {
+      changed = true;
+      meta.dirty.delete(r.id);
+      if (r.deleted) {
+        dmap.delete(r.id); cmap.delete(r.id);
+        meta.deleted[r.id] = { kind: r.kind, u: remote };
+      } else {
+        delete meta.deleted[r.id];
+        (r.kind === 'deck' ? dmap : cmap).set(r.id, { ...r.data, u: remote });
+      }
+    } else if (remote < local) {
+      meta.dirty.add(r.id);
+    }
+  }
+  // Anything the server has never seen (e.g. made before signing in) gets pushed
+  for (const id of [...dmap.keys(), ...cmap.keys(), ...Object.keys(meta.deleted)]) if (!seen.has(id)) meta.dirty.add(id);
+  if (changed) { db.decks = [...dmap.values()]; db.cards = [...cmap.values()]; }
+  return changed;
+}
+
+async function sync(full = true) {
+  if (!sb || !user) return;
+  if (syncing) { syncQueued = syncQueued || full; return; }
+  if (!navigator.onLine) { setSync('offline'); return; }
+  clearTimeout(pushTimer);
+  syncing = true; setSync('syncing');
+  try {
+    const changed = full ? await pull() : false;
+    await push();
+    meta.last = Date.now();
+    save(false);
+    setSync('ok');
+    if (changed) softRender();
+  } catch (e) {
+    saveMeta();
+    setSync(navigator.onLine ? 'error' : 'offline', e.message || String(e));
+  }
+  syncing = false;
+  if (syncQueued !== null) { const f = syncQueued; syncQueued = null; sync(f); }
+}
+
+// Re-render after remote changes, unless the user is typing
+function softRender() {
+  const a = document.activeElement;
+  if (a && /INPUT|TEXTAREA/.test(a.tagName) && a.value) return;
+  render();
+}
+
+function syncInfoHtml() {
+  if (!user) return '';
+  const when = meta.last ? 'Last synced ' + new Date(meta.last).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Not synced yet';
+  return `Signed in as <b>${esc(user.email || '')}</b> · ${syncState === 'error' ? 'Sync error: ' + esc(syncErr) : when}`;
+}
+
+function syncCardHtml() {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return '';
+  if (!sb) return `<div class="card"><h2>Sync</h2><p class="muted">Couldn’t load the sync library. Check your connection and reload.</p></div>`;
+  if (user) return `
+    <div class="card">
+      <h2>Sync</h2>
+      <p class="muted" id="syncInfo" style="margin-bottom:10px">${syncInfoHtml()}</p>
+      <div class="row"><button class="btn" data-act="sync-now">Sync now</button><button class="btn" data-act="signout">Sign out</button></div>
+    </div>`;
+  return `
+    <div class="card">
+      <h2>Sync</h2>
+      <p class="muted" style="margin-bottom:10px">Sign in to sync your decks across devices.</p>
+      <form data-form="signin">
+        <div class="row" style="align-items:flex-end">
+          <div class="field"><label>Email</label><input type="text" name="email" autocomplete="username" inputmode="email" required></div>
+          <div class="field"><label>Password</label><input type="password" name="password" autocomplete="current-password" required></div>
+        </div>
+        <button class="btn primary">Sign in</button>
+      </form>
+    </div>`;
+}
+
+if (sb) {
+  sb.auth.onAuthStateChange((event, session) => {
+    const next = session ? session.user : null;
+    if ((next && next.id) === (user && user.id)) return;
+    user = next;
+    if (user) {
+      // A different account signed in on this device: don't mix their cards with the previous one's
+      if (meta.userId && meta.userId !== user.id) {
+        db = { decks: [], cards: [] };
+        meta = { dirty: new Set(), deleted: {}, last: 0, userId: null };
+      }
+      meta.userId = user.id; save(false);
+      setTimeout(() => sync(true));  // don't call Supabase inside this callback
+    } else {
+      setSync('signedout');
+    }
+    if (route().view === 'home') render();
+  });
+  setInterval(() => { if (!document.hidden) sync(true); }, 5 * 60e3);
+  window.addEventListener('online', () => sync(true));
+}
 
 /* ------------------------------------------------------------------ *
  * Events
@@ -626,8 +861,14 @@ $('#importFile').addEventListener('change', e => {
 });
 window.addEventListener('hashchange', () => { ui.editing = ui.editAfterNav || null; ui.editAfterNav = null; if (route().view !== 'study') ui.study = null; render(); window.scrollTo(0, 0); });
 // Re-render when returning to the tab so due counts stay fresh
-document.addEventListener('visibilitychange', () => { if (!document.hidden && route().view !== 'study') render(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { if (meta.dirty.size) sync(false); return; }
+  if (route().view !== 'study') render();
+  sync(true);
+});
+$('#syncPill').addEventListener('click', () => { if (user) sync(true); else location.hash = '#/'; });
 
+setSync(syncState);
 render();
 </script>
 </body>
