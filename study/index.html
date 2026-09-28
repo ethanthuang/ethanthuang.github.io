@@ -31,6 +31,8 @@
   .acct-menu[hidden] { display: none; }
   .acct-menu h3 { font-size: 13px; font-weight: 600; letter-spacing: -0.2px; margin-bottom: 4px; }
   .acct-menu .muted { margin-bottom: 10px; word-break: break-word; }
+  .form-err { color: #b3261e; font-size: 12px; margin-bottom: 9px; }
+  .form-err:empty { display: none; }
 
   /* Layout */
   .main { max-width: 760px; margin: 0 auto; padding: 16px 16px 60px; display: flex; flex-direction: column; gap: 9px; }
@@ -633,6 +635,8 @@ const actions = {
   grade(el) { answer(+el.dataset.g); },
   undo,
   'sync-now'() { sync(true); },
+  'change-password'() { showAcctView('password'); },
+  'cancel-password'() { showAcctView('main'); },
   async signout() {
     // Signing out clears this device; the account keeps everything that has synced
     await sync(false);
@@ -686,6 +690,28 @@ const forms = {
     const { error } = await sb.auth.signInWithPassword({ email: f.email.value.trim(), password: f.password.value });
     btn.disabled = false;
     if (error) toast(error.message);
+  },
+  async changepw(f) {
+    const err = msg => { $('#pwErr').textContent = msg; };
+    const current = f.current.value, next = f.next.value;
+    if (next.length < 6) return err('New password must be at least 6 characters.');
+    if (next !== f.confirm.value) return err('New passwords don’t match.');
+    if (next === current) return err('New password must be different from the current one.');
+    err('');
+    const btn = f.querySelector('button.primary'); btn.disabled = true;
+    try {
+      // Supabase doesn't ask for the old password, so check it ourselves first
+      const check = await sb.auth.signInWithPassword({ email: user.email, password: current });
+      if (check.error) return err('Current password is incorrect.');
+      const { error } = await sb.auth.updateUser({ password: next });
+      if (error) return err(error.message);
+      // Sign out every other device that was using the old password
+      await sb.auth.signOut({ scope: 'others' });
+      toggleAcct(false);
+      toast('Password changed. Other devices have been signed out.');
+    } finally {
+      if (btn.isConnected) btn.disabled = false;
+    }
   },
   settings(f) {
     const d = deckById(route().id);
@@ -822,7 +848,20 @@ function acctMenuHtml() {
   return `
     <h3>${esc(user.email || 'Signed in')}</h3>
     <p class="muted">${syncState === 'error' ? 'Sync error: ' + esc(syncErr) : syncState === 'offline' ? 'Offline. Changes will sync when you reconnect.' : when}</p>
-    <div class="row"><button class="btn small" data-act="sync-now">Sync now</button><button class="btn small" data-act="signout">Sign out</button></div>`;
+    <div class="row"><button class="btn small" data-act="sync-now">Sync now</button><button class="btn small" data-act="change-password">Change password</button><button class="btn small" data-act="signout">Sign out</button></div>`;
+}
+
+function passwordFormHtml() {
+  return `
+    <h3>Change password</h3>
+    <form data-form="changepw" style="margin-top:8px">
+      <input type="text" name="username" autocomplete="username" value="${esc(user.email || '')}" hidden>
+      <div class="field"><label>Current password</label><input type="password" name="current" autocomplete="current-password" required></div>
+      <div class="field"><label>New password</label><input type="password" name="next" autocomplete="new-password" required></div>
+      <div class="field"><label>Confirm new password</label><input type="password" name="confirm" autocomplete="new-password" required></div>
+      <p class="form-err" id="pwErr"></p>
+      <div class="row"><button class="btn primary small">Change password</button><button type="button" class="btn small" data-act="cancel-password">Cancel</button></div>
+    </form>`;
 }
 
 function renderAcct() {
@@ -832,11 +871,22 @@ function renderAcct() {
   const state = sbFailed ? 'error' : syncState;
   p.textContent = { syncing: 'Syncing…', ok: 'Synced', offline: 'Offline', error: sb ? 'Sync error' : 'Sync unavailable' }[state] || 'Synced';
   p.className = 'sync-pill ' + state;
-  menu.innerHTML = acctMenuHtml();
+  if (acctView !== 'password') menu.innerHTML = acctMenuHtml();
+}
+
+let acctView = 'main';  // 'main' | 'password'
+
+function showAcctView(view) {
+  acctView = view;
+  const menu = $('#acctMenu');
+  menu.innerHTML = view === 'password' ? passwordFormHtml() : acctMenuHtml();
+  const first = menu.querySelector('input:not([hidden])');
+  if (first) first.focus();
 }
 
 function toggleAcct(open = $('#acctMenu').hidden) {
   const menu = $('#acctMenu');
+  acctView = 'main';
   if (open) renderAcct();
   menu.hidden = !open;
   $('#syncPill').setAttribute('aria-expanded', open);
@@ -930,7 +980,8 @@ document.addEventListener('visibilitychange', () => {
   sync(true);
 });
 $('#syncPill').addEventListener('click', e => { e.stopPropagation(); toggleAcct(); });
-document.addEventListener('click', e => { if (!$('#acctMenu').hidden && !$('#acct').contains(e.target)) toggleAcct(false); });
+// composedPath, not contains(): the clicked button may already have been replaced by a menu re-render
+document.addEventListener('click', e => { if (!$('#acctMenu').hidden && !e.composedPath().includes($('#acct'))) toggleAcct(false); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#acctMenu').hidden) toggleAcct(false); });
 
 setSync(syncState);
