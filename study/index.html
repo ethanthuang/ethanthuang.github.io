@@ -27,8 +27,6 @@
   .sync-pill.syncing::before { background: #d9b44a; }
   .sync-pill.error { background: #3a1c1a; color: #e08a80; }
   .sync-pill.error::before { background: #e08a80; }
-  .sync-pill.signedout { background: #f7f6f3; color: #1a1a18; font-weight: 500; padding: 4px 12px; }
-  .sync-pill.signedout::before, .sync-pill.loading::before { display: none; }
   .acct-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 20; width: 280px; max-width: calc(100vw - 32px); background: #fff; color: #1a1a18; border: 1px solid #e8e7e4; border-radius: 11px; box-shadow: 0 8px 28px rgba(0,0,0,0.14); padding: 14px; }
   .acct-menu[hidden] { display: none; }
   .acct-menu h3 { font-size: 13px; font-weight: 600; letter-spacing: -0.2px; margin-bottom: 4px; }
@@ -116,6 +114,16 @@
   .done { padding: 48px 20px; text-align: center; }
   .done h2 { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 6px; }
   .hint { text-align: center; font-size: 11px; color: #b0aea8; }
+
+  /* Welcome (signed out) */
+  .welcome { padding: 28px 22px; }
+  .welcome h2 { font-size: 22px; font-weight: 600; letter-spacing: -0.6px; margin-bottom: 6px; }
+  .welcome .lede { font-size: 14px; color: #5a5a56; max-width: 460px; }
+  .features { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
+  .features li { background: #fafaf8; border: 1px solid #f0eeea; border-radius: 9px; padding: 11px 12px; font-size: 12.5px; color: #5a5a56; }
+  .features b { display: block; color: #1a1a18; font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .signin-card { max-width: 380px; }
+  @media (max-width: 520px) { .features { grid-template-columns: 1fr; } .welcome { padding: 22px 16px; } }
 
   /* Toast */
   #toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(20px); background: #1a1a18; color: #f7f6f3; font-size: 12.5px; padding: 8px 16px; border-radius: 20px; opacity: 0; pointer-events: none; transition: all 0.2s; max-width: calc(100% - 32px); }
@@ -326,6 +334,9 @@ function route() {
 
 function render() {
   clearTimeout(refreshTimer);
+  // With sync set up, the app is only shown when signed in. If the sync library
+  // can't load (e.g. offline), fall back to the decks saved on this device.
+  if (SYNC_ON && !sbFailed && !user) return authReady ? renderWelcome() : renderLoading();
   const r = route();
   const d = r.id && deckById(r.id);
   if (r.view === 'deck' && d) return renderDeck(d);
@@ -334,6 +345,35 @@ function render() {
 }
 
 function cntCell(n, cls) { return `<span class="cnt ${cls}${n ? '' : ' zero'}">${n}</span>`; }
+
+function renderLoading() {
+  $('#crumb').innerHTML = '';
+  app.innerHTML = `<div class="card empty">Loading…</div>`;
+}
+
+function renderWelcome() {
+  $('#crumb').innerHTML = '';
+  document.title = 'Study';
+  if ($('#welcome')) return;  // keep anything typed into the sign-in form
+  app.innerHTML = `
+    <div class="card welcome" id="welcome">
+      <h2>Welcome to Study</h2>
+      <p class="lede">Flashcards with spaced repetition. Each card comes back right before you’d forget it, so a few minutes a day is enough to remember it for good.</p>
+      <ul class="features">
+        <li><b>Build decks</b>Add cards one at a time or paste a whole list.</li>
+        <li><b>Study daily</b>Grade yourself and the schedule adapts to each card.</li>
+        <li><b>Sync everywhere</b>Pick up where you left off on any device.</li>
+      </ul>
+    </div>
+    <div class="card signin-card">
+      <h2>Sign in</h2>
+      <form data-form="signin">
+        <div class="field"><label>Email</label><input type="text" name="email" autocomplete="username" inputmode="email" required></div>
+        <div class="field"><label>Password</label><input type="password" name="password" autocomplete="current-password" required></div>
+        <button class="btn primary">Sign in</button>
+      </form>
+    </div>`;
+}
 
 function renderHome() {
   $('#crumb').innerHTML = '';
@@ -666,7 +706,7 @@ const SUPABASE_URL = 'https://grxbztlgnqcvdcydxosc.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_pGqsePMs_uKqjkYqt_29hQ_-DSmR3U7';  // publishable key: safe to publish, rows are protected by row level security
 
 const SYNC_ON = !!(SUPABASE_URL && SUPABASE_KEY);
-let sb = null, sbFailed = false;
+let sb = null, sbFailed = false, authReady = false;
 let user = null, syncState = SYNC_ON ? 'signedout' : 'off', syncErr = '';
 let syncing = false, syncQueued = null, pushTimer;
 
@@ -777,36 +817,22 @@ function softRender() {
 
 /* Account control in the header: status pill + dropdown with sign in / sign out */
 function acctMenuHtml() {
-  if (!sb) return sbFailed
-    ? `<h3>Sync unavailable</h3><p class="muted" style="margin:0">Couldn’t load the sync library. Check your connection (or any content blocker) and <a href="javascript:location.reload()">reload</a>.</p>`
-    : `<p class="muted" style="margin:0">Connecting…</p>`;
-  if (user) {
-    const when = meta.last ? 'Last synced ' + new Date(meta.last).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Not synced yet';
-    return `
-      <h3>${esc(user.email || 'Signed in')}</h3>
-      <p class="muted">${syncState === 'error' ? 'Sync error: ' + esc(syncErr) : syncState === 'offline' ? 'Offline. Changes will sync when you reconnect.' : when}</p>
-      <div class="row"><button class="btn small" data-act="sync-now">Sync now</button><button class="btn small" data-act="signout">Sign out</button></div>`;
-  }
+  if (!sb) return `<h3>Sync unavailable</h3><p class="muted" style="margin:0">Couldn’t load the sync library, so you’re seeing the decks saved on this device. Check your connection (or any content blocker) and <a href="javascript:location.reload()">reload</a>.</p>`;
+  const when = meta.last ? 'Last synced ' + new Date(meta.last).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Not synced yet';
   return `
-    <h3>Sign in</h3>
-    <p class="muted">Sync your decks across devices.</p>
-    <form data-form="signin">
-      <div class="field"><label>Email</label><input type="text" name="email" autocomplete="username" inputmode="email" required></div>
-      <div class="field"><label>Password</label><input type="password" name="password" autocomplete="current-password" required></div>
-      <button class="btn primary">Sign in</button>
-    </form>`;
+    <h3>${esc(user.email || 'Signed in')}</h3>
+    <p class="muted">${syncState === 'error' ? 'Sync error: ' + esc(syncErr) : syncState === 'offline' ? 'Offline. Changes will sync when you reconnect.' : when}</p>
+    <div class="row"><button class="btn small" data-act="sync-now">Sync now</button><button class="btn small" data-act="signout">Sign out</button></div>`;
 }
 
 function renderAcct() {
   const wrap = $('#acct'), p = $('#syncPill'), menu = $('#acctMenu');
-  wrap.hidden = !SYNC_ON;
-  if (!SYNC_ON) return;
-  const state = !sb ? (sbFailed ? 'error' : 'loading') : user ? syncState : 'signedout';
-  p.textContent = { loading: 'Connecting…', signedout: 'Sign in', syncing: 'Syncing…', ok: 'Synced', offline: 'Offline', error: sb ? 'Sync error' : 'Sync unavailable' }[state];
+  wrap.hidden = !SYNC_ON || !(user || sbFailed);
+  if (wrap.hidden) { menu.hidden = true; return; }
+  const state = sbFailed ? 'error' : syncState;
+  p.textContent = { syncing: 'Syncing…', ok: 'Synced', offline: 'Offline', error: sb ? 'Sync error' : 'Sync unavailable' }[state] || 'Synced';
   p.className = 'sync-pill ' + state;
-  // Don't wipe a half-filled sign-in form
-  const a = document.activeElement;
-  if (!(menu.contains(a) && a.tagName === 'INPUT')) menu.innerHTML = acctMenuHtml();
+  menu.innerHTML = acctMenuHtml();
 }
 
 function toggleAcct(open = $('#acctMenu').hidden) {
@@ -814,7 +840,6 @@ function toggleAcct(open = $('#acctMenu').hidden) {
   if (open) renderAcct();
   menu.hidden = !open;
   $('#syncPill').setAttribute('aria-expanded', open);
-  if (open) { const i = menu.querySelector('input'); if (i) i.focus(); }
 }
 
 // Load supabase-js on demand so the rest of the app works even if the CDN is unreachable
@@ -827,12 +852,15 @@ async function initSync() {
     console.error('Failed to load supabase-js', e);
     sbFailed = true;
     renderAcct();
+    render();
     return;
   }
   renderAcct();
   sb.auth.onAuthStateChange((event, session) => {
     const next = session ? session.user : null;
-    if ((next && next.id) === (user && user.id)) return;
+    const first = !authReady;
+    authReady = true;
+    if ((next && next.id) === (user && user.id)) { if (first) render(); return; }
     user = next;
     if (user) {
       // A different account signed in on this device: don't mix their cards with the previous one's
@@ -847,7 +875,7 @@ async function initSync() {
       setSync('signedout');
     }
     renderAcct();
-    if (route().view === 'home') render();
+    render();
   });
   setInterval(() => { if (!document.hidden) sync(true); }, 5 * 60e3);
   window.addEventListener('online', () => sync(true));
