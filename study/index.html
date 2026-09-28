@@ -650,8 +650,8 @@ const forms = {
  * changes are pushed in the background and the newest version (by u) wins.
  * Schema and policies: study/supabase.sql
  * ------------------------------------------------------------------ */
-const SUPABASE_URL = '';  // e.g. 'https://abcdefgh.supabase.co'
-const SUPABASE_KEY = '';  // anon / publishable key: safe to publish, rows are protected by row level security
+const SUPABASE_URL = 'https://grxbztlgnqcvdcydxosc.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_pGqsePMs_uKqjkYqt_29hQ_-DSmR3U7';  // publishable key: safe to publish, rows are protected by row level security
 
 const sb = SUPABASE_URL && SUPABASE_KEY && window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 let user = null, syncState = sb ? 'signedout' : 'off', syncErr = '';
