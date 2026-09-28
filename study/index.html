@@ -584,13 +584,15 @@ const actions = {
   undo,
   'sync-now'() { sync(true); },
   async signout() {
+    // Signing out clears this device; the account keeps everything that has synced
     await sync(false);
-    const pending = meta.dirty.size;
-    const wipe = !pending && confirm('Also remove your cards from this device? They stay safe in your account.');
+    if (meta.dirty.size && !confirm(`${meta.dirty.size} change${meta.dirty.size === 1 ? ' hasn’t' : 's haven’t'} synced yet and will be lost if you sign out now. Sign out anyway?`)) return;
     await sb.auth.signOut();
-    if (wipe) { db = { decks: [], cards: [] }; meta = { dirty: new Set(), deleted: {}, last: 0, userId: null }; save(false); }
-    else if (pending) toast('Some changes haven’t synced yet, so they were kept on this device.');
+    db = { decks: [], cards: [] };
+    meta = { dirty: new Set(), deleted: {}, last: 0, userId: null };
+    save(false);
     render();
+    toast('Signed out');
   },
 };
 
