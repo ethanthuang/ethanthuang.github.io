@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Study</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f7f6f3; color: #1a1a18; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; }
+
+  /* Header */
+  .header { background: #1a1a18; color: #f7f6f3; padding: 22px 24px 18px; }
+  .header-in { max-width: 760px; margin: 0 auto; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .header h1 { font-size: 19px; font-weight: 600; letter-spacing: -0.4px; }
+  .header h1 a { text-decoration: none; }
+  .crumb { font-size: 13px; color: #888; }
+  .crumb a { color: #ccc; text-decoration: none; }
+  .crumb a:hover { color: #fff; }
+  .sync-pill { margin-left: auto; font: inherit; font-size: 11px; padding: 3px 10px; border-radius: 20px; background: #2e2e2c; color: #ccc; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .sync-pill[hidden] { display: none; }
+  .sync-pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #888; }
+  .sync-pill.ok { background: #16331f; color: #6dbd6d; }
+  .sync-pill.ok::before { background: #6dbd6d; }
+  .sync-pill.syncing::before { background: #d9b44a; }
+  .sync-pill.error { background: #3a1c1a; color: #e08a80; }
+  .sync-pill.error::before { background: #e08a80; }
+
+  /* Layout */
+  .main { max-width: 760px; margin: 0 auto; padding: 16px 16px 60px; display: flex; flex-direction: column; gap: 9px; }
+  .card { background: #fff; border-radius: 11px; border: 1px solid #e8e7e4; padding: 14px 16px; }
+  .card h2 { font-size: 13px; font-weight: 600; letter-spacing: -0.2px; margin-bottom: 10px; }
+  .muted { color: #8a8a86; font-size: 12.5px; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .spacer { flex: 1; }
+
+  /* Controls */
+  .btn { font: inherit; font-size: 12.5px; padding: 6px 14px; border-radius: 20px; border: 1px solid #ddd; background: #fff; cursor: pointer; color: #333; transition: all 0.15s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .btn:hover { border-color: #bbb; }
+  .btn.primary { background: #1a1a18; color: #fff; border-color: #1a1a18; }
+  .btn.primary:hover { background: #333; }
+  .btn.danger { color: #b3261e; }
+  .btn.danger:hover { border-color: #b3261e; }
+  .btn.small { font-size: 11.5px; padding: 3px 10px; }
+  .btn:disabled { opacity: 0.4; cursor: default; }
+  input[type=text], input[type=number], input[type=search], textarea { font: inherit; font-size: 13px; padding: 7px 10px; border: 1px solid #ddd; border-radius: 8px; background: #fff; color: inherit; width: 100%; }
+  input:focus, textarea:focus { outline: none; border-color: #8b6fc9; box-shadow: 0 0 0 3px #8b6fc922; }
+  textarea { resize: vertical; min-height: 60px; line-height: 1.45; }
+  label { font-size: 11.5px; color: #8a8a86; display: block; margin-bottom: 3px; }
+  .field { margin-bottom: 9px; flex: 1; min-width: 0; }
+  details > summary { cursor: pointer; font-size: 13px; font-weight: 600; letter-spacing: -0.2px; list-style: none; user-select: none; }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::before { content: '▸'; display: inline-block; width: 14px; color: #b0aea8; transition: transform 0.15s; }
+  details[open] > summary::before { transform: rotate(90deg); }
+  details[open] > summary { margin-bottom: 10px; }
+  kbd { font-family: inherit; font-size: 10.5px; padding: 0 5px; border: 1px solid #ddd; border-bottom-width: 2px; border-radius: 4px; color: #888; background: #fafaf8; }
+
+  /* Counts */
+  .cnt { font-variant-numeric: tabular-nums; font-size: 12.5px; font-weight: 600; min-width: 34px; text-align: right; }
+  .cnt.new { color: #3a6ea5; }
+  .cnt.learn { color: #c0502d; }
+  .cnt.due { color: #2f8a4a; }
+  .cnt.zero { color: #d0cfca; font-weight: 400; }
+
+  /* Deck list */
+  .decks { padding: 0; overflow: hidden; }
+  .deck-row { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-top: 1px solid #f0eeea; text-decoration: none; }
+  .deck-row:first-child { border-top: none; }
+  a.deck-row:hover { background: #fafaf8; }
+  .deck-row.head { font-size: 11px; color: #b0aea8; padding-top: 9px; padding-bottom: 7px; }
+  .deck-row.head .cnt { font-weight: 400; color: #b0aea8; font-size: 11px; }
+  .deck-name { flex: 1; font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .empty { padding: 28px 16px; text-align: center; color: #8a8a86; font-size: 13px; }
+
+  /* Deck overview */
+  .overview { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .stat { display: flex; flex-direction: column; }
+  .stat b { font-size: 20px; font-weight: 600; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; }
+  .stat span { font-size: 11px; color: #8a8a86; }
+
+  /* Card list */
+  .clist { margin-top: 10px; border-top: 1px solid #f0eeea; }
+  .citem { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid #f0eeea; align-items: flex-start; }
+  .citem .txt { flex: 1; min-width: 0; font-size: 12.5px; }
+  .citem .f { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .citem .b { color: #8a8a86; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .citem .st { font-size: 11px; color: #b0aea8; white-space: nowrap; padding-top: 2px; }
+  .citem .acts { display: flex; gap: 4px; }
+  .citem.editing { flex-direction: column; align-items: stretch; }
+
+  /* Study */
+  .study { min-height: 280px; display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+  .study-top { display: flex; align-items: center; gap: 6px; padding: 10px 16px; border-bottom: 1px solid #f0eeea; font-size: 12px; }
+  .study-top .cnt { min-width: 0; }
+  .study-top .cnt.active { text-decoration: underline; text-underline-offset: 3px; }
+  .face { padding: 32px 22px; text-align: center; font-size: 19px; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
+  .divider { border: none; border-top: 1px solid #e8e7e4; margin: 0 22px; }
+  .answer-bar { margin-top: auto; padding: 14px 16px; border-top: 1px solid #f0eeea; background: #fafaf8; display: flex; justify-content: center; gap: 8px; }
+  .grades { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; max-width: 480px; }
+  .grade { font: inherit; border: 1px solid #ddd; border-radius: 10px; background: #fff; cursor: pointer; padding: 7px 4px; display: flex; flex-direction: column; align-items: center; gap: 1px; transition: all 0.15s; }
+  .grade:hover { border-color: #999; }
+  .grade .g { font-size: 13px; font-weight: 600; }
+  .grade .i { font-size: 11px; color: #8a8a86; }
+  .grade.again .g { color: #b3261e; }
+  .grade.hard .g { color: #a0661a; }
+  .grade.good .g { color: #2f8a4a; }
+  .grade.easy .g { color: #3a6ea5; }
+  .done { padding: 48px 20px; text-align: center; }
+  .done h2 { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 6px; }
+  .hint { text-align: center; font-size: 11px; color: #b0aea8; }
+
+  /* Toast */
+  #toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(20px); background: #1a1a18; color: #f7f6f3; font-size: 12.5px; padding: 8px 16px; border-radius: 20px; opacity: 0; pointer-events: none; transition: all 0.2s; max-width: calc(100% - 32px); }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 520px) {
+    .header { padding: 18px 16px 14px; }
+    .face { font-size: 17px; padding: 26px 16px; }
+    .grades { gap: 6px; }
+    .hint { display: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="header"><div class="header-in">
+    <h1><a href="#/">Study</a></h1>
+    <span class="crumb" id="crumb"></span>
+    <button class="sync-pill" id="syncPill" hidden></button>
+  </div></div>
+  <div class="main" id="app"></div>
+  <input type="file" id="importFile" accept="application/json,.json" hidden>
+  <div id="toast"></div>
+
+<script>
+/* ------------------------------------------------------------------ *
+ * Storage
+ * ------------------------------------------------------------------ */
+const KEY = 'study.v1';
+const MIN = 60e3, HOUR = 60 * MIN, DAY = 24 * HOUR;
+const LEARN_STEPS = [1 * MIN, 10 * MIN];   // new cards: 1m, 10m, then graduate
+const RELEARN_STEPS = [10 * MIN];          // lapsed cards
+const LEARN_AHEAD = 20 * MIN;              // show learning cards early if nothing else is due
+const GRADUATING_IVL = 1, EASY_IVL = 4;    // days
+
+let db = load();
+
+function load() {
+  try {
+    const s = localStorage.getItem(KEY);
+    if (s) {
+      const d = JSON.parse(s);
+      if (d && Array.isArray(d.decks) && Array.isArray(d.cards)) {
+        // every deck/card carries u = last-modified time, used to resolve sync conflicts
+        for (const x of [...d.decks, ...d.cards]) if (!x.u) x.u = x.created || 1;
+        return d;
+      }
+    }
+  } catch (e) {}
+  return { decks: [], cards: [] };
+}
+function save(push = true) {
+  try { localStorage.setItem(KEY, JSON.stringify(db)); }
+  catch (e) { toast('Could not save. Browser storage is unavailable.'); }
+  saveMeta();
+  if (push) schedulePush();
+}
+
+// Sync bookkeeping, kept apart from db so exports stay clean.
+// dirty: ids changed locally and not yet pushed; deleted: tombstones { id: { kind, u } }
+const SYNC_KEY = 'study.sync';
+let meta = loadMeta();
+function loadMeta() {
+  try {
+    const m = JSON.parse(localStorage.getItem(SYNC_KEY));
+    if (m) return { dirty: new Set(m.dirty || []), deleted: m.deleted || {}, last: m.last || 0, userId: m.userId || null };
+  } catch (e) {}
+  return { dirty: new Set(), deleted: {}, last: 0, userId: null };
+}
+function saveMeta() {
+  try { localStorage.setItem(SYNC_KEY, JSON.stringify({ ...meta, dirty: [...meta.dirty] })); } catch (e) {}
+}
+// Mark a deck/card as changed now
+function touch(o) { o.u = Date.now(); meta.dirty.add(o.id); delete meta.deleted[o.id]; return o; }
+// Record a deletion so it propagates to other devices
+function tomb(kind, id) { meta.deleted[id] = { kind, u: Date.now() }; meta.dirty.add(id); }
+
+/* ------------------------------------------------------------------ *
+ * Helpers
+ * ------------------------------------------------------------------ */
+const $ = s => document.querySelector(s);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const deckById = id => db.decks.find(d => d.id === id);
+const cardsOf = id => db.cards.filter(c => c.deck === id);
+function todayKey(t = Date.now()) { const d = new Date(t); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+function startOfDay(t) { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); }
+function daysFromToday(n, now) { const d = new Date(now); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + n); return d.getTime(); }
+
+function fmtDays(d) {
+  if (d < 30) return d + 'd';
+  if (d < 365) return +(d / 30).toFixed(1) + 'mo';
+  return +(d / 365).toFixed(1) + 'y';
+}
+function fmtMs(ms) {
+  if (ms < HOUR) return Math.max(1, Math.round(ms / MIN)) + 'm';
+  if (ms < DAY) return +(ms / HOUR).toFixed(1) + 'h';
+  return fmtDays(Math.round(ms / DAY));
+}
+
+let toastTimer;
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ------------------------------------------------------------------ *
+ * Scheduling (SM-2 variant, modelled on Anki)
+ * Card: { id, deck, front, back, created, state: new|learning|review|relearning,
+ *         due (ms), ivl (days), ease, step, reps, lapses }
+ * ------------------------------------------------------------------ */
+function newCard(deck, front, back, created = Date.now()) {
+  return { id: uid(), deck, front, back, created, state: 'new', due: 0, ivl: 0, ease: 2.5, step: 0, reps: 0, lapses: 0 };
+}
+
+// grade: 1 Again, 2 Hard, 3 Good, 4 Easy. Returns a new card; does not mutate.
+function schedule(card, grade, now = Date.now()) {
+  const c = { ...card };
+  const toReview = ivl => { c.state = 'review'; c.step = 0; c.ivl = ivl; c.due = daysFromToday(ivl, now); };
+
+  if (c.state === 'new' || c.state === 'learning') {
+    if (c.state === 'new') { c.state = 'learning'; c.step = 0; }
+    const S = LEARN_STEPS;
+    if (grade === 1) { c.step = 0; c.due = now + S[0]; }
+    else if (grade === 2) { c.due = now + (c.step === 0 && S.length > 1 ? (S[0] + S[1]) / 2 : S[c.step]); }
+    else if (grade === 3) { c.step++; if (c.step >= S.length) toReview(GRADUATING_IVL); else c.due = now + S[c.step]; }
+    else toReview(EASY_IVL);
+  } else if (c.state === 'relearning') {
+    const S = RELEARN_STEPS;
+    if (grade === 1) { c.step = 0; c.due = now + S[0]; }
+    else if (grade === 2) { c.due = now + S[c.step]; }
+    else if (grade === 3) { c.step++; if (c.step >= S.length) toReview(c.ivl); else c.due = now + S[c.step]; }
+    else toReview(c.ivl + 1);
+  } else { // review
+    const late = Math.max(0, Math.round((startOfDay(now) - c.due) / DAY));
+    const hard = Math.max(c.ivl + 1, Math.round(c.ivl * 1.2));
+    const good = Math.max(hard + 1, Math.round((c.ivl + late / 2) * c.ease));
+    const easy = Math.max(good + 1, Math.round((c.ivl + late) * c.ease * 1.3));
+    if (grade === 1) {
+      c.lapses++; c.ease = Math.max(1.3, c.ease - 0.2);
+      c.ivl = Math.max(1, Math.round(c.ivl * 0.5));
+      c.state = 'relearning'; c.step = 0; c.due = now + RELEARN_STEPS[0];
+    } else if (grade === 2) { c.ease = Math.max(1.3, c.ease - 0.15); toReview(hard); }
+    else if (grade === 3) { toReview(good); }
+    else { c.ease += 0.15; toReview(easy); }
+  }
+  c.ivl = Math.min(c.ivl, 36500);
+  c.reps++;
+  return c;
+}
+
+function previewLabel(card, grade, now) {
+  const n = schedule(card, grade, now);
+  return n.state === 'review' ? fmtDays(n.ivl) : fmtMs(n.due - now);
+}
+
+function newLeft(d) {
+  const used = d.newToday && d.newToday.date === todayKey() ? d.newToday.count : 0;
+  return Math.max(0, d.newPerDay - used);
+}
+
+function counts(d, now = Date.now()) {
+  let n = 0, l = 0, r = 0;
+  for (const c of db.cards) {
+    if (c.deck !== d.id) continue;
+    if (c.state === 'new') n++;
+    else if (c.state === 'review') { if (c.due <= now) r++; }
+    else if (c.due <= now + LEARN_AHEAD) l++;
+  }
+  return { new: Math.min(n, newLeft(d)), learn: l, review: r, totalNew: n };
+}
+
+function nextCard(d, now = Date.now()) {
+  const cs = cardsOf(d.id), byDue = (a, b) => a.due - b.due;
+  const learn = cs.filter(c => c.state === 'learning' || c.state === 'relearning').sort(byDue);
+  if (learn[0] && learn[0].due <= now) return learn[0];
+  const rev = cs.filter(c => c.state === 'review' && c.due <= now).sort(byDue);
+  if (rev[0]) return rev[0];
+  if (newLeft(d) > 0) {
+    const nw = cs.filter(c => c.state === 'new').sort((a, b) => a.created - b.created);
+    if (nw[0]) return nw[0];
+  }
+  if (learn[0] && learn[0].due <= now + LEARN_AHEAD) return learn[0];
+  return null;
+}
+
+function cardStatus(c, now = Date.now()) {
+  if (c.state === 'new') return 'New';
+  if (c.state !== 'review') return 'Learning';
+  if (c.due <= now) return 'Due';
+  return 'in ' + fmtDays(Math.max(1, Math.round((c.due - startOfDay(now)) / DAY)));
+}
+
+/* ------------------------------------------------------------------ *
+ * Views
+ * ------------------------------------------------------------------ */
+const app = $('#app');
+let ui = { editing: null, search: '', study: null };
+let refreshTimer;
+
+function route() {
+  const h = location.hash.replace(/^#\/?/, '').split('/');
+  return { view: h[0] || 'home', id: h[1] };
+}
+
+function render() {
+  clearTimeout(refreshTimer);
+  const r = route();
+  const d = r.id && deckById(r.id);
+  if (r.view === 'deck' && d) return renderDeck(d);
+  if (r.view === 'study' && d) return renderStudy(d);
+  renderHome();
+}
+
+function cntCell(n, cls) { return `<span class="cnt ${cls}${n ? '' : ' zero'}">${n}</span>`; }
+
+function renderHome() {
+  $('#crumb').innerHTML = '';
+  document.title = 'Study';
+  const rows = [...db.decks].sort((a, b) => (a.created || 0) - (b.created || 0)).map(d => {
+    const k = counts(d);
+    return `<a class="deck-row" href="#/deck/${d.id}"><span class="deck-name">${esc(d.name)}</span>${cntCell(k.new, 'new')}${cntCell(k.learn, 'learn')}${cntCell(k.review, 'due')}</a>`;
+  }).join('');
+  app.innerHTML = `
+    <div class="card decks">
+      ${db.decks.length
+        ? `<div class="deck-row head"><span class="deck-name">Deck</span><span class="cnt">New</span><span class="cnt">Learn</span><span class="cnt">Due</span></div>${rows}`
+        : `<div class="empty">No decks yet. Create one below to get started.</div>`}
+    </div>
+    <div class="card">
+      <form class="row" data-form="newdeck">
+        <div class="field" style="margin:0"><input type="text" name="name" placeholder="New deck name" required maxlength="100"></div>
+        <button class="btn primary">Create deck</button>
+      </form>
+    </div>
+    ${syncCardHtml()}
+    <div class="card">
+      <h2>Backup</h2>
+      <p class="muted" style="margin-bottom:10px">${user ? 'Download a copy of all your decks as a file.' : 'Cards are saved in this browser only. Export regularly to back up or move to another device.'}</p>
+      <div class="row">
+        <button class="btn" data-act="export">Export all</button>
+        <button class="btn" data-act="import">Import…</button>
+      </div>
+    </div>`;
+}
+
+function renderDeck(d) {
+  $('#crumb').innerHTML = `/ ${esc(d.name)}`;
+  document.title = d.name + ' · Study';
+  const k = counts(d), cs = cardsOf(d.id);
+  const canStudy = !!nextCard(d);
+  app.innerHTML = `
+    <div class="card overview">
+      <div class="stat"><b class="cnt new" style="text-align:left">${k.new}</b><span>New</span></div>
+      <div class="stat"><b class="cnt learn" style="text-align:left">${k.learn}</b><span>Learning</span></div>
+      <div class="stat"><b class="cnt due" style="text-align:left">${k.review}</b><span>Due</span></div>
+      <div class="stat"><b>${cs.length}</b><span>Total cards</span></div>
+      <span class="spacer"></span>
+      <a class="btn primary" href="#/study/${d.id}" ${canStudy ? '' : 'aria-disabled="true" style="opacity:.4;pointer-events:none"'}>Study now</a>
+    </div>
+
+    <div class="card">
+      <h2>Add card</h2>
+      <form data-form="addcard">
+        <div class="field"><label>Front</label><textarea name="front" required rows="2"></textarea></div>
+        <div class="field"><label>Back</label><textarea name="back" required rows="2"></textarea></div>
+        <div class="row"><button class="btn primary">Add card</button><span class="muted"><kbd>Ctrl</kbd> + <kbd>Enter</kbd></span></div>
+      </form>
+    </div>
+
+    <details class="card">
+      <summary>Bulk add</summary>
+      <form data-form="bulk">
+        <p class="muted" style="margin-bottom:8px">One card per line. Separate front and back with a tab (pasting from a spreadsheet works) or <code>::</code></p>
+        <div class="field"><textarea name="text" rows="6" placeholder="hola :: hello&#10;gracias :: thank you"></textarea></div>
+        <button class="btn primary">Add cards</button>
+      </form>
+    </details>
+
+    <div class="card">
+      <div class="row"><h2 style="margin:0">Cards</h2><span class="spacer"></span>
+        <div style="width:200px;max-width:100%"><input type="search" id="search" placeholder="Search" value="${esc(ui.search)}"></div>
+      </div>
+      <div class="clist" id="clist"></div>
+    </div>
+
+    <details class="card">
+      <summary>Deck settings</summary>
+      <form data-form="settings">
+        <div class="row" style="align-items:flex-end">
+          <div class="field"><label>Name</label><input type="text" name="name" value="${esc(d.name)}" required maxlength="100"></div>
+          <div class="field" style="flex:0 0 120px"><label>New cards / day</label><input type="number" name="newPerDay" min="0" max="9999" value="${d.newPerDay}"></div>
+        </div>
+        <div class="row"><button class="btn primary">Save</button><span class="spacer"></span>
+          <button type="button" class="btn" data-act="export-deck">Export deck</button>
+          <button type="button" class="btn danger" data-act="delete-deck">Delete deck</button></div>
+      </form>
+    </details>`;
+  renderCardList(d);
+}
+
+function renderCardList(d) {
+  const q = ui.search.trim().toLowerCase();
+  const now = Date.now();
+  const cs = cardsOf(d.id)
+    .filter(c => !q || c.front.toLowerCase().includes(q) || c.back.toLowerCase().includes(q))
+    .sort((a, b) => b.created - a.created);
+  const el = $('#clist');
+  if (!cs.length) { el.innerHTML = `<div class="empty">${q ? 'No matching cards.' : 'No cards yet.'}</div>`; return; }
+  el.innerHTML = cs.map(c => c.id === ui.editing ? `
+      <form class="citem editing" data-form="editcard" data-id="${c.id}">
+        <div class="field"><label>Front</label><textarea name="front" required rows="2">${esc(c.front)}</textarea></div>
+        <div class="field"><label>Back</label><textarea name="back" required rows="2">${esc(c.back)}</textarea></div>
+        <div class="row"><button class="btn primary small">Save</button><button type="button" class="btn small" data-act="cancel-edit">Cancel</button>
+          <span class="spacer"></span><button type="button" class="btn small" data-act="reset-card" data-id="${c.id}">Reset progress</button></div>
+      </form>` : `
+      <div class="citem">
+        <div class="txt"><div class="f">${esc(c.front)}</div><div class="b">${esc(c.back)}</div></div>
+        <span class="st">${cardStatus(c, now)}</span>
+        <div class="acts"><button class="btn small" data-act="edit" data-id="${c.id}">Edit</button><button class="btn small danger" data-act="delete-card" data-id="${c.id}" aria-label="Delete">✕</button></div>
+      </div>`).join('');
+}
+
+function renderStudy(d) {
+  $('#crumb').innerHTML = `/ <a href="#/deck/${d.id}">${esc(d.name)}</a> / study`;
+  document.title = d.name + ' · Study';
+  const now = Date.now();
+  let s = ui.study;
+  if (!s || s.deck !== d.id) s = ui.study = { deck: d.id, cardId: null, revealed: false, undo: null };
+  let c = s.cardId && db.cards.find(x => x.id === s.cardId);
+  if (!c) { c = nextCard(d, now); s.cardId = c ? c.id : null; s.revealed = false; }
+  const undoBtn = s.undo ? `<button class="btn small" data-act="undo">Undo <kbd>Z</kbd></button>` : '';
+
+  if (!c) {
+    const pending = cardsOf(d.id).filter(x => x.state === 'learning' || x.state === 'relearning').sort((a, b) => a.due - b.due)[0];
+    let msg = 'No more cards are due right now.';
+    if (pending) {
+      const wait = pending.due - LEARN_AHEAD - now;
+      msg = `The next learning card is ready in ${fmtMs(pending.due - now)}.`;
+      refreshTimer = setTimeout(render, Math.max(1000, wait));
+    } else if (counts(d).totalNew && !newLeft(d)) {
+      msg += ' You’ve reached today’s new card limit.';
+    }
+    app.innerHTML = `
+      <div class="card study"><div class="done">
+        <h2>Nice work!</h2>
+        <p class="muted">${msg}</p>
+        <div class="row" style="justify-content:center;margin-top:16px">${undoBtn}<a class="btn primary" href="#/deck/${d.id}">Back to deck</a></div>
+      </div></div>`;
+    return;
+  }
+
+  const k = counts(d, now);
+  const kind = c.state === 'new' ? 'new' : c.state === 'review' ? 'due' : 'learn';
+  const pill = (n, cls) => `<span class="cnt ${cls}${kind === cls ? ' active' : ''}${n ? '' : ' zero'}">${n}</span>`;
+  const grades = [[1, 'Again', 'again'], [2, 'Hard', 'hard'], [3, 'Good', 'good'], [4, 'Easy', 'easy']];
+
+  app.innerHTML = `
+    <div class="card study">
+      <div class="study-top">${pill(k.new, 'new')}<span class="muted">+</span>${pill(k.learn, 'learn')}<span class="muted">+</span>${pill(k.review, 'due')}
+        <span class="spacer"></span>${undoBtn}<button class="btn small" data-act="edit-current">Edit</button></div>
+      <div class="face">${esc(c.front)}</div>
+      ${s.revealed ? `<hr class="divider"><div class="face">${esc(c.back)}</div>` : ''}
+      <div class="answer-bar">
+        ${s.revealed
+          ? `<div class="grades">${grades.map(([g, name, cls]) =>
+              `<button class="grade ${cls}" data-act="grade" data-g="${g}"><span class="g">${name}</span><span class="i">${previewLabel(c, g, now)}</span></button>`).join('')}</div>`
+          : `<button class="btn primary" data-act="reveal" style="padding:9px 28px">Show answer</button>`}
+      </div>
+    </div>
+    <p class="hint">${s.revealed ? '<kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>4</kbd> to grade · <kbd>Space</kbd> = Good' : '<kbd>Space</kbd> to show answer'}</p>`;
+}
+
+/* ------------------------------------------------------------------ *
+ * Actions
+ * ------------------------------------------------------------------ */
+function answer(grade) {
+  const s = ui.study; if (!s || !s.revealed) return;
+  const d = deckById(s.deck), i = db.cards.findIndex(x => x.id === s.cardId);
+  if (!d || i < 0) return;
+  const prev = db.cards[i];
+  s.undo = { card: prev, newToday: d.newToday ? { ...d.newToday } : null };
+  if (prev.state === 'new') {
+    const t = todayKey();
+    d.newToday = { date: t, count: (d.newToday && d.newToday.date === t ? d.newToday.count : 0) + 1 };
+    touch(d);
+  }
+  db.cards[i] = touch(schedule(prev, grade));
+  save();
+  s.cardId = null; s.revealed = false;
+  render();
+}
+
+function undo() {
+  const s = ui.study; if (!s || !s.undo) return;
+  const d = deckById(s.deck), u = s.undo;
+  const i = db.cards.findIndex(x => x.id === u.card.id);
+  if (i >= 0) db.cards[i] = touch({ ...u.card });
+  if (d) { d.newToday = u.newToday; touch(d); }
+  save();
+  s.undo = null; s.cardId = u.card.id; s.revealed = true;
+  render();
+}
+
+function download(name, data) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+function importData(data) {
+  if (!data || !Array.isArray(data.decks) || !Array.isArray(data.cards)) throw new Error('bad file');
+  // Merge: decks/cards with an existing id are replaced, the rest are added.
+  let nd = 0, nc = 0;
+  for (const d of data.decks) {
+    if (!d || !d.id || !d.name) continue;
+    const deck = { newPerDay: 20, ...d };
+    const i = db.decks.findIndex(x => x.id === d.id);
+    touch(deck);
+    if (i >= 0) db.decks[i] = deck; else db.decks.push(deck);
+    nd++;
+  }
+  for (const c of data.cards) {
+    if (!c || !c.id || !c.deck || typeof c.front !== 'string') continue;
+    const card = { ...newCard(c.deck, c.front, c.back || ''), ...c };
+    const i = db.cards.findIndex(x => x.id === c.id);
+    touch(card);
+    if (i >= 0) db.cards[i] = card; else db.cards.push(card);
+    nc++;
+  }
+  save();
+  return [nd, nc];
+}
+
+const actions = {
+  export() { download(`study-backup-${todayKey()}.json`, db); },
+  import() { $('#importFile').click(); },
+  'export-deck'() {
+    const d = deckById(route().id);
+    download(`${d.name.replace(/[^\w-]+/g, '_')}.json`, { decks: [d], cards: cardsOf(d.id) });
+  },
+  'delete-deck'() {
+    const d = deckById(route().id);
+    if (!confirm(`Delete “${d.name}” and its ${cardsOf(d.id).length} cards? This can’t be undone.`)) return;
+    cardsOf(d.id).forEach(c => tomb('card', c.id));
+    tomb('deck', d.id);
+    db.decks = db.decks.filter(x => x.id !== d.id);
+    db.cards = db.cards.filter(c => c.deck !== d.id);
+    save(); location.hash = '#/';
+  },
+  edit(el) { ui.editing = el.dataset.id; renderCardList(deckById(route().id)); const t = $('#clist textarea'); if (t) t.focus(); },
+  'cancel-edit'() { ui.editing = null; renderCardList(deckById(route().id)); },
+  'delete-card'(el) {
+    if (!confirm('Delete this card?')) return;
+    tomb('card', el.dataset.id);
+    db.cards = db.cards.filter(c => c.id !== el.dataset.id);
+    save(); render();
+  },
+  'reset-card'(el) {
+    if (!confirm('Reset this card’s progress? It will become a new card again.')) return;
+    const i = db.cards.findIndex(c => c.id === el.dataset.id);
+    const c = db.cards[i];
+    db.cards[i] = touch({ ...newCard(c.deck, c.front, c.back, c.created), id: c.id });
+    ui.editing = null; save(); render();
+  },
+  'edit-current'() {
+    const s = ui.study; ui.editAfterNav = s.cardId; ui.search = '';
+    location.hash = '#/deck/' + s.deck;
+  },
+  reveal() { if (ui.study) { ui.study.revealed = true; render(); } },
+  grade(el) { answer(+el.dataset.g); },
+  undo,
+  'sync-now'() { sync(true); },
+  async signout() {
+    await sync(false);
+    const pending = meta.dirty.size;
+    const wipe = !pending && confirm('Also remove your cards from this device? They stay safe in your account.');
+    await sb.auth.signOut();
+    if (wipe) { db = { decks: [], cards: [] }; meta = { dirty: new Set(), deleted: {}, last: 0, userId: null }; save(false); }
+    else if (pending) toast('Some changes haven’t synced yet, so they were kept on this device.');
+    render();
+  },
+};
+
+const forms = {
+  newdeck(f) {
+    const name = f.name.value.trim(); if (!name) return;
+    const d = { id: uid(), name, newPerDay: 20, created: Date.now(), newToday: null };
+    db.decks.push(touch(d)); save();
+    location.hash = '#/deck/' + d.id;
+  },
+  addcard(f) {
+    const front = f.front.value.trim(), back = f.back.value.trim();
+    if (!front || !back) return;
+    db.cards.push(touch(newCard(route().id, front, back))); save();
+    render(); toast('Card added');
+    $('form[data-form=addcard] textarea').focus();
+  },
+  bulk(f) {
+    const deck = route().id, t0 = Date.now();
+    let n = 0, skipped = 0;
+    f.text.value.split(/\r?\n/).forEach(line => {
+      if (!line.trim()) return;
+      const parts = line.includes('\t') ? line.split('\t') : line.split('::');
+      const front = (parts[0] || '').trim(), back = parts.slice(1).join(' ').trim();
+      if (!front || !back) { skipped++; return; }
+      db.cards.push(touch(newCard(deck, front, back, t0 + n++)));
+    });
+    save(); render();
+    toast(`Added ${n} card${n === 1 ? '' : 's'}${skipped ? ` · skipped ${skipped} line${skipped === 1 ? '' : 's'}` : ''}`);
+  },
+  editcard(f) {
+    const c = db.cards.find(x => x.id === f.dataset.id);
+    const front = f.front.value.trim(), back = f.back.value.trim();
+    if (!c || !front || !back) return;
+    c.front = front; c.back = back; touch(c); ui.editing = null;
+    save(); renderCardList(deckById(route().id)); toast('Saved');
+  },
+  async signin(f) {
+    const btn = f.querySelector('button'); btn.disabled = true;
+    const { error } = await sb.auth.signInWithPassword({ email: f.email.value.trim(), password: f.password.value });
+    btn.disabled = false;
+    if (error) toast(error.message);
+  },
+  settings(f) {
+    const d = deckById(route().id);
+    d.name = f.name.value.trim() || d.name;
+    d.newPerDay = Math.max(0, Math.min(9999, parseInt(f.newPerDay.value, 10) || 0));
+    touch(d);
+    save(); render(); toast('Settings saved');
+  },
+};
+
+/* ------------------------------------------------------------------ *
+ * Sync (Supabase)
+ * Each deck/card is one row in study_items. Local copy is the source for the UI;
+ * changes are pushed in the background and the newest version (by u) wins.
+ * Schema and policies: study/supabase.sql
+ * ------------------------------------------------------------------ */
+const SUPABASE_URL = 'https://grxbztlgnqcvdcydxosc.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_pGqsePMs_uKqjkYqt_29hQ_-DSmR3U7';  // publishable key: safe to publish, rows are protected by row level security
+
+const SYNC_ON = !!(SUPABASE_URL && SUPABASE_KEY);
+let sb = null, sbFailed = false;
+let user = null, syncState = SYNC_ON ? 'signedout' : 'off', syncErr = '';
+let syncing = false, syncQueued = null, pushTimer;
+
+function setSync(state, err = '') {
+  syncState = state; syncErr = err;
+  const p = $('#syncPill');
+  const label = { signedout: 'Not synced', syncing: 'Syncing…', ok: 'Synced', offline: 'Offline', error: 'Sync error' }[state];
+  p.hidden = !label;
+  p.textContent = label || '';
+  p.className = 'sync-pill ' + state;
+  p.title = state === 'error' ? err : state === 'ok' && meta.last ? 'Last synced ' + new Date(meta.last).toLocaleTimeString() : '';
+  const info = $('#syncInfo');
+  if (info) info.innerHTML = syncInfoHtml();
+}
+
+function schedulePush() {
+  if (!user) return;
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(() => sync(false), 1500);
+}
+
+function rowFor(id, dmap, cmap) {
+  const t = meta.deleted[id];
+  if (t) return { id, kind: t.kind, data: null, updated_at: t.u, deleted: true };
+  const d = dmap.get(id);
+  if (d) return { id, kind: 'deck', data: d, updated_at: d.u, deleted: false };
+  const c = cmap.get(id);
+  if (c) return { id, kind: 'card', data: c, updated_at: c.u, deleted: false };
+  return null;
+}
+
+async function push() {
+  if (!meta.dirty.size) return;
+  const maps = () => [new Map(db.decks.map(d => [d.id, d])), new Map(db.cards.map(c => [c.id, c]))];
+  let [dmap, cmap] = maps();
+  const ids = [...meta.dirty];
+  const rows = ids.map(id => rowFor(id, dmap, cmap)).filter(Boolean);
+  for (let i = 0; i < rows.length; i += 500) {
+    // study_push only overwrites a row if ours is newer
+    const { error } = await sb.rpc('study_push', { items: rows.slice(i, i + 500) });
+    if (error) throw error;
+  }
+  // Keep anything that changed again while we were pushing
+  [dmap, cmap] = maps();
+  const sent = new Map(rows.map(r => [r.id, r.updated_at]));
+  for (const id of ids) {
+    const now = rowFor(id, dmap, cmap);
+    if (!now || now.updated_at === sent.get(id)) meta.dirty.delete(id);
+  }
+}
+
+// Fetch everything and merge. Returns true if local data changed.
+async function pull() {
+  const rows = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await sb.from('study_items').select('id,kind,data,updated_at,deleted').order('id').range(from, from + 999);
+    if (error) throw error;
+    rows.push(...data);
+    if (data.length < 1000) break;
+  }
+  const dmap = new Map(db.decks.map(d => [d.id, d])), cmap = new Map(db.cards.map(c => [c.id, c]));
+  const version = id => meta.deleted[id] ? meta.deleted[id].u : (dmap.get(id) || cmap.get(id) || { u: 0 }).u;
+  const seen = new Set();
+  let changed = false;
+  for (const r of rows) {
+    seen.add(r.id);
+    const remote = Number(r.updated_at), local = version(r.id);
+    if (remote > local) {
+      changed = true;
+      meta.dirty.delete(r.id);
+      if (r.deleted) {
+        dmap.delete(r.id); cmap.delete(r.id);
+        meta.deleted[r.id] = { kind: r.kind, u: remote };
+      } else {
+        delete meta.deleted[r.id];
+        (r.kind === 'deck' ? dmap : cmap).set(r.id, { ...r.data, u: remote });
+      }
+    } else if (remote < local) {
+      meta.dirty.add(r.id);
+    }
+  }
+  // Anything the server has never seen (e.g. made before signing in) gets pushed
+  for (const id of [...dmap.keys(), ...cmap.keys(), ...Object.keys(meta.deleted)]) if (!seen.has(id)) meta.dirty.add(id);
+  if (changed) { db.decks = [...dmap.values()]; db.cards = [...cmap.values()]; }
+  return changed;
+}
+
+async function sync(full = true) {
+  if (!sb || !user) return;
+  if (syncing) { syncQueued = syncQueued || full; return; }
+  if (!navigator.onLine) { setSync('offline'); return; }
+  clearTimeout(pushTimer);
+  syncing = true; setSync('syncing');
+  try {
+    const changed = full ? await pull() : false;
+    await push();
+    meta.last = Date.now();
+    save(false);
+    setSync('ok');
+    if (changed) softRender();
+  } catch (e) {
+    saveMeta();
+    setSync(navigator.onLine ? 'error' : 'offline', e.message || String(e));
+  }
+  syncing = false;
+  if (syncQueued !== null) { const f = syncQueued; syncQueued = null; sync(f); }
+}
+
+// Re-render after remote changes, unless the user is typing
+function softRender() {
+  const a = document.activeElement;
+  if (a && /INPUT|TEXTAREA/.test(a.tagName) && a.value) return;
+  render();
+}
+
+function syncInfoHtml() {
+  if (!user) return '';
+  const when = meta.last ? 'Last synced ' + new Date(meta.last).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Not synced yet';
+  return `Signed in as <b>${esc(user.email || '')}</b> · ${syncState === 'error' ? 'Sync error: ' + esc(syncErr) : when}`;
+}
+
+function syncCardHtml() {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return '';
+  if (!sb) return `<div class="card"><h2>Sync</h2><p class="muted">${sbFailed
+    ? 'Couldn’t load the sync library. Check your connection (or any content blocker) and <a href="javascript:location.reload()">reload</a>.'
+    : 'Connecting…'}</p></div>`;
+  if (user) return `
+    <div class="card">
+      <h2>Sync</h2>
+      <p class="muted" id="syncInfo" style="margin-bottom:10px">${syncInfoHtml()}</p>
+      <div class="row"><button class="btn" data-act="sync-now">Sync now</button><button class="btn" data-act="signout">Sign out</button></div>
+    </div>`;
+  return `
+    <div class="card">
+      <h2>Sync</h2>
+      <p class="muted" style="margin-bottom:10px">Sign in to sync your decks across devices.</p>
+      <form data-form="signin">
+        <div class="row" style="align-items:flex-end">
+          <div class="field"><label>Email</label><input type="text" name="email" autocomplete="username" inputmode="email" required></div>
+          <div class="field"><label>Password</label><input type="password" name="password" autocomplete="current-password" required></div>
+        </div>
+        <button class="btn primary">Sign in</button>
+      </form>
+    </div>`;
+}
+
+// Load supabase-js on demand so the rest of the app works even if the CDN is unreachable
+async function initSync() {
+  if (!SYNC_ON) return;
+  try {
+    const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+    sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+  } catch (e) {
+    console.error('Failed to load supabase-js', e);
+    sbFailed = true;
+    if (route().view === 'home') render();
+    return;
+  }
+  if (route().view === 'home') render();
+  sb.auth.onAuthStateChange((event, session) => {
+    const next = session ? session.user : null;
+    if ((next && next.id) === (user && user.id)) return;
+    user = next;
+    if (user) {
+      // A different account signed in on this device: don't mix their cards with the previous one's
+      if (meta.userId && meta.userId !== user.id) {
+        db = { decks: [], cards: [] };
+        meta = { dirty: new Set(), deleted: {}, last: 0, userId: null };
+      }
+      meta.userId = user.id; save(false);
+      setTimeout(() => sync(true));  // don't call Supabase inside this callback
+    } else {
+      setSync('signedout');
+    }
+    if (route().view === 'home') render();
+  });
+  setInterval(() => { if (!document.hidden) sync(true); }, 5 * 60e3);
+  window.addEventListener('online', () => sync(true));
+}
+
+/* ------------------------------------------------------------------ *
+ * Events
+ * ------------------------------------------------------------------ */
+app.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (el && actions[el.dataset.act]) { e.preventDefault(); actions[el.dataset.act](el); }
+});
+app.addEventListener('submit', e => {
+  const f = e.target.closest('form[data-form]');
+  if (f && forms[f.dataset.form]) { e.preventDefault(); forms[f.dataset.form](f); }
+});
+app.addEventListener('input', e => {
+  if (e.target.id === 'search') { ui.search = e.target.value; renderCardList(deckById(route().id)); }
+});
+app.addEventListener('keydown', e => {
+  // Ctrl/Cmd + Enter submits any form from a textarea
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target.form) { e.preventDefault(); e.target.form.requestSubmit(); }
+});
+document.addEventListener('keydown', e => {
+  if (route().view !== 'study' || !ui.study) return;
+  if (e.ctrlKey || e.metaKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+  const s = ui.study;
+  if (e.key === 'z' || e.key === 'Z') { e.preventDefault(); undo(); return; }
+  if (!s.cardId) return;
+  if (!s.revealed) {
+    if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); actions.reveal(); }
+  } else if (/^[1-4]$/.test(e.key)) { e.preventDefault(); answer(+e.key); }
+  else if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); answer(3); }
+});
+$('#importFile').addEventListener('change', e => {
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try { const [nd, nc] = importData(JSON.parse(r.result)); render(); toast(`Imported ${nd} deck${nd === 1 ? '' : 's'}, ${nc} card${nc === 1 ? '' : 's'}`); }
+    catch (err) { toast('That file doesn’t look like a Study export.'); }
+    e.target.value = '';
+  };
+  r.readAsText(file);
+});
+window.addEventListener('hashchange', () => { ui.editing = ui.editAfterNav || null; ui.editAfterNav = null; if (route().view !== 'study') ui.study = null; render(); window.scrollTo(0, 0); });
+// Re-render when returning to the tab so due counts stay fresh
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { if (meta.dirty.size) sync(false); return; }
+  if (route().view !== 'study') render();
+  sync(true);
+});
+$('#syncPill').addEventListener('click', () => { if (user) sync(true); else location.hash = '#/'; });
+
+setSync(syncState);
+render();
+initSync();
+</script>
+</body>
+</html>
