@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Study</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f7f6f3; color: #1a1a18; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
@@ -653,8 +652,9 @@ const forms = {
 const SUPABASE_URL = 'https://grxbztlgnqcvdcydxosc.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_pGqsePMs_uKqjkYqt_29hQ_-DSmR3U7';  // publishable key: safe to publish, rows are protected by row level security
 
-const sb = SUPABASE_URL && SUPABASE_KEY && window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
-let user = null, syncState = sb ? 'signedout' : 'off', syncErr = '';
+const SYNC_ON = !!(SUPABASE_URL && SUPABASE_KEY);
+let sb = null, sbFailed = false;
+let user = null, syncState = SYNC_ON ? 'signedout' : 'off', syncErr = '';
 let syncing = false, syncQueued = null, pushTimer;
 
 function setSync(state, err = '') {
@@ -777,7 +777,9 @@ function syncInfoHtml() {
 
 function syncCardHtml() {
   if (!SUPABASE_URL || !SUPABASE_KEY) return '';
-  if (!sb) return `<div class="card"><h2>Sync</h2><p class="muted">Couldn’t load the sync library. Check your connection and reload.</p></div>`;
+  if (!sb) return `<div class="card"><h2>Sync</h2><p class="muted">${sbFailed
+    ? 'Couldn’t load the sync library. Check your connection (or any content blocker) and <a href="javascript:location.reload()">reload</a>.'
+    : 'Connecting…'}</p></div>`;
   if (user) return `
     <div class="card">
       <h2>Sync</h2>
@@ -798,7 +800,19 @@ function syncCardHtml() {
     </div>`;
 }
 
-if (sb) {
+// Load supabase-js on demand so the rest of the app works even if the CDN is unreachable
+async function initSync() {
+  if (!SYNC_ON) return;
+  try {
+    const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+    sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+  } catch (e) {
+    console.error('Failed to load supabase-js', e);
+    sbFailed = true;
+    if (route().view === 'home') render();
+    return;
+  }
+  if (route().view === 'home') render();
   sb.auth.onAuthStateChange((event, session) => {
     const next = session ? session.user : null;
     if ((next && next.id) === (user && user.id)) return;
@@ -870,6 +884,7 @@ $('#syncPill').addEventListener('click', () => { if (user) sync(true); else loca
 
 setSync(syncState);
 render();
+initSync();
 </script>
 </body>
 </html>
