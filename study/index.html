@@ -17,7 +17,9 @@
   .crumb { font-size: 13px; color: #888; }
   .crumb a { color: #ccc; text-decoration: none; }
   .crumb a:hover { color: #fff; }
-  .sync-pill { margin-left: auto; font: inherit; font-size: 11px; padding: 3px 10px; border-radius: 20px; background: #2e2e2c; color: #ccc; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .acct { margin-left: auto; position: relative; align-self: center; }
+  .acct[hidden] { display: none; }
+  .sync-pill { font: inherit; font-size: 11px; padding: 3px 10px; border-radius: 20px; background: #2e2e2c; color: #ccc; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
   .sync-pill[hidden] { display: none; }
   .sync-pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #888; }
   .sync-pill.ok { background: #16331f; color: #6dbd6d; }
@@ -25,6 +27,12 @@
   .sync-pill.syncing::before { background: #d9b44a; }
   .sync-pill.error { background: #3a1c1a; color: #e08a80; }
   .sync-pill.error::before { background: #e08a80; }
+  .sync-pill.signedout { background: #f7f6f3; color: #1a1a18; font-weight: 500; padding: 4px 12px; }
+  .sync-pill.signedout::before, .sync-pill.loading::before { display: none; }
+  .acct-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 20; width: 280px; max-width: calc(100vw - 32px); background: #fff; color: #1a1a18; border: 1px solid #e8e7e4; border-radius: 11px; box-shadow: 0 8px 28px rgba(0,0,0,0.14); padding: 14px; }
+  .acct-menu[hidden] { display: none; }
+  .acct-menu h3 { font-size: 13px; font-weight: 600; letter-spacing: -0.2px; margin-bottom: 4px; }
+  .acct-menu .muted { margin-bottom: 10px; word-break: break-word; }
 
   /* Layout */
   .main { max-width: 760px; margin: 0 auto; padding: 16px 16px 60px; display: flex; flex-direction: column; gap: 9px; }
@@ -43,7 +51,7 @@
   .btn.danger:hover { border-color: #b3261e; }
   .btn.small { font-size: 11.5px; padding: 3px 10px; }
   .btn:disabled { opacity: 0.4; cursor: default; }
-  input[type=text], input[type=number], input[type=search], textarea { font: inherit; font-size: 13px; padding: 7px 10px; border: 1px solid #ddd; border-radius: 8px; background: #fff; color: inherit; width: 100%; }
+  input[type=text], input[type=password], input[type=number], input[type=search], textarea { font: inherit; font-size: 13px; padding: 7px 10px; border: 1px solid #ddd; border-radius: 8px; background: #fff; color: inherit; width: 100%; }
   input:focus, textarea:focus { outline: none; border-color: #8b6fc9; box-shadow: 0 0 0 3px #8b6fc922; }
   textarea { resize: vertical; min-height: 60px; line-height: 1.45; }
   label { font-size: 11.5px; color: #8a8a86; display: block; margin-bottom: 3px; }
@@ -125,7 +133,10 @@
   <div class="header"><div class="header-in">
     <h1><a href="#/">Study</a></h1>
     <span class="crumb" id="crumb"></span>
-    <button class="sync-pill" id="syncPill" hidden></button>
+    <div class="acct" id="acct" hidden>
+      <button class="sync-pill" id="syncPill" aria-haspopup="true" aria-expanded="false"></button>
+      <div class="acct-menu" id="acctMenu" hidden></div>
+    </div>
   </div></div>
   <div class="main" id="app"></div>
   <input type="file" id="importFile" accept="application/json,.json" hidden>
@@ -343,7 +354,6 @@ function renderHome() {
         <button class="btn primary">Create deck</button>
       </form>
     </div>
-    ${syncCardHtml()}
     <div class="card">
       <h2>Backup</h2>
       <p class="muted" style="margin-bottom:10px">${user ? 'Download a copy of all your decks as a file.' : 'Cards are saved in this browser only. Export regularly to back up or move to another device.'}</p>
@@ -591,6 +601,7 @@ const actions = {
     db = { decks: [], cards: [] };
     meta = { dirty: new Set(), deleted: {}, last: 0, userId: null };
     save(false);
+    toggleAcct(false);
     render();
     toast('Signed out');
   },
@@ -661,14 +672,7 @@ let syncing = false, syncQueued = null, pushTimer;
 
 function setSync(state, err = '') {
   syncState = state; syncErr = err;
-  const p = $('#syncPill');
-  const label = { signedout: 'Not synced', syncing: 'Syncing…', ok: 'Synced', offline: 'Offline', error: 'Sync error' }[state];
-  p.hidden = !label;
-  p.textContent = label || '';
-  p.className = 'sync-pill ' + state;
-  p.title = state === 'error' ? err : state === 'ok' && meta.last ? 'Last synced ' + new Date(meta.last).toLocaleTimeString() : '';
-  const info = $('#syncInfo');
-  if (info) info.innerHTML = syncInfoHtml();
+  renderAcct();
 }
 
 function schedulePush() {
@@ -771,35 +775,46 @@ function softRender() {
   render();
 }
 
-function syncInfoHtml() {
-  if (!user) return '';
-  const when = meta.last ? 'Last synced ' + new Date(meta.last).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Not synced yet';
-  return `Signed in as <b>${esc(user.email || '')}</b> · ${syncState === 'error' ? 'Sync error: ' + esc(syncErr) : when}`;
+/* Account control in the header: status pill + dropdown with sign in / sign out */
+function acctMenuHtml() {
+  if (!sb) return sbFailed
+    ? `<h3>Sync unavailable</h3><p class="muted" style="margin:0">Couldn’t load the sync library. Check your connection (or any content blocker) and <a href="javascript:location.reload()">reload</a>.</p>`
+    : `<p class="muted" style="margin:0">Connecting…</p>`;
+  if (user) {
+    const when = meta.last ? 'Last synced ' + new Date(meta.last).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Not synced yet';
+    return `
+      <h3>${esc(user.email || 'Signed in')}</h3>
+      <p class="muted">${syncState === 'error' ? 'Sync error: ' + esc(syncErr) : syncState === 'offline' ? 'Offline. Changes will sync when you reconnect.' : when}</p>
+      <div class="row"><button class="btn small" data-act="sync-now">Sync now</button><button class="btn small" data-act="signout">Sign out</button></div>`;
+  }
+  return `
+    <h3>Sign in</h3>
+    <p class="muted">Sync your decks across devices.</p>
+    <form data-form="signin">
+      <div class="field"><label>Email</label><input type="text" name="email" autocomplete="username" inputmode="email" required></div>
+      <div class="field"><label>Password</label><input type="password" name="password" autocomplete="current-password" required></div>
+      <button class="btn primary">Sign in</button>
+    </form>`;
 }
 
-function syncCardHtml() {
-  if (!SUPABASE_URL || !SUPABASE_KEY) return '';
-  if (!sb) return `<div class="card"><h2>Sync</h2><p class="muted">${sbFailed
-    ? 'Couldn’t load the sync library. Check your connection (or any content blocker) and <a href="javascript:location.reload()">reload</a>.'
-    : 'Connecting…'}</p></div>`;
-  if (user) return `
-    <div class="card">
-      <h2>Sync</h2>
-      <p class="muted" id="syncInfo" style="margin-bottom:10px">${syncInfoHtml()}</p>
-      <div class="row"><button class="btn" data-act="sync-now">Sync now</button><button class="btn" data-act="signout">Sign out</button></div>
-    </div>`;
-  return `
-    <div class="card">
-      <h2>Sync</h2>
-      <p class="muted" style="margin-bottom:10px">Sign in to sync your decks across devices.</p>
-      <form data-form="signin">
-        <div class="row" style="align-items:flex-end">
-          <div class="field"><label>Email</label><input type="text" name="email" autocomplete="username" inputmode="email" required></div>
-          <div class="field"><label>Password</label><input type="password" name="password" autocomplete="current-password" required></div>
-        </div>
-        <button class="btn primary">Sign in</button>
-      </form>
-    </div>`;
+function renderAcct() {
+  const wrap = $('#acct'), p = $('#syncPill'), menu = $('#acctMenu');
+  wrap.hidden = !SYNC_ON;
+  if (!SYNC_ON) return;
+  const state = !sb ? (sbFailed ? 'error' : 'loading') : user ? syncState : 'signedout';
+  p.textContent = { loading: 'Connecting…', signedout: 'Sign in', syncing: 'Syncing…', ok: 'Synced', offline: 'Offline', error: sb ? 'Sync error' : 'Sync unavailable' }[state];
+  p.className = 'sync-pill ' + state;
+  // Don't wipe a half-filled sign-in form
+  const a = document.activeElement;
+  if (!(menu.contains(a) && a.tagName === 'INPUT')) menu.innerHTML = acctMenuHtml();
+}
+
+function toggleAcct(open = $('#acctMenu').hidden) {
+  const menu = $('#acctMenu');
+  if (open) renderAcct();
+  menu.hidden = !open;
+  $('#syncPill').setAttribute('aria-expanded', open);
+  if (open) { const i = menu.querySelector('input'); if (i) i.focus(); }
 }
 
 // Load supabase-js on demand so the rest of the app works even if the CDN is unreachable
@@ -811,10 +826,10 @@ async function initSync() {
   } catch (e) {
     console.error('Failed to load supabase-js', e);
     sbFailed = true;
-    if (route().view === 'home') render();
+    renderAcct();
     return;
   }
-  if (route().view === 'home') render();
+  renderAcct();
   sb.auth.onAuthStateChange((event, session) => {
     const next = session ? session.user : null;
     if ((next && next.id) === (user && user.id)) return;
@@ -826,10 +841,12 @@ async function initSync() {
         meta = { dirty: new Set(), deleted: {}, last: 0, userId: null };
       }
       meta.userId = user.id; save(false);
+      toggleAcct(false);
       setTimeout(() => sync(true));  // don't call Supabase inside this callback
     } else {
       setSync('signedout');
     }
+    renderAcct();
     if (route().view === 'home') render();
   });
   setInterval(() => { if (!document.hidden) sync(true); }, 5 * 60e3);
@@ -839,14 +856,16 @@ async function initSync() {
 /* ------------------------------------------------------------------ *
  * Events
  * ------------------------------------------------------------------ */
-app.addEventListener('click', e => {
-  const el = e.target.closest('[data-act]');
-  if (el && actions[el.dataset.act]) { e.preventDefault(); actions[el.dataset.act](el); }
-});
-app.addEventListener('submit', e => {
-  const f = e.target.closest('form[data-form]');
-  if (f && forms[f.dataset.form]) { e.preventDefault(); forms[f.dataset.form](f); }
-});
+for (const root of [app, $('#acctMenu')]) {
+  root.addEventListener('click', e => {
+    const el = e.target.closest('[data-act]');
+    if (el && actions[el.dataset.act]) { e.preventDefault(); actions[el.dataset.act](el); }
+  });
+  root.addEventListener('submit', e => {
+    const f = e.target.closest('form[data-form]');
+    if (f && forms[f.dataset.form]) { e.preventDefault(); forms[f.dataset.form](f); }
+  });
+}
 app.addEventListener('input', e => {
   if (e.target.id === 'search') { ui.search = e.target.value; renderCardList(deckById(route().id)); }
 });
@@ -882,7 +901,9 @@ document.addEventListener('visibilitychange', () => {
   if (route().view !== 'study') render();
   sync(true);
 });
-$('#syncPill').addEventListener('click', () => { if (user) sync(true); else location.hash = '#/'; });
+$('#syncPill').addEventListener('click', e => { e.stopPropagation(); toggleAcct(); });
+document.addEventListener('click', e => { if (!$('#acctMenu').hidden && !$('#acct').contains(e.target)) toggleAcct(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#acctMenu').hidden) toggleAcct(false); });
 
 setSync(syncState);
 render();
